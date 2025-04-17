@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 
 export const Hero = () => {
@@ -15,10 +14,7 @@ export const Hero = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button size="lg" className="bg-exitloop-purple hover:bg-exitloop-purple/90">
-                Prova Exitloop
-              </Button>
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10">
-                Scopri di più
+                Iscriviti alla waiting list
               </Button>
             </div>
           </div>
