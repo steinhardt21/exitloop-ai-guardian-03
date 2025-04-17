@@ -1,7 +1,19 @@
 
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { useState } from "react";
+import { Mail } from "lucide-react";
 
 export const Cta = () => {
+  const [email, setEmail] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // TODO: Implement waiting list submission logic
+    console.log("Submitted email:", email);
+  };
+
   return (
     <section className="py-20 bg-gray-50 dark:bg-gray-800">
       <div className="container-custom">
@@ -66,14 +78,32 @@ export const Cta = () => {
             <p className="text-gray-600 dark:text-gray-400 mb-6">
               Richiedi subito una demo personalizzata e scopri come Exitloop può trasformare il turnover da problema a opportunità.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-exitloop-purple hover:bg-exitloop-purple/90">
-                Richiedi una demo
-              </Button>
-              <Button size="lg" variant="outline">
-                Contattaci
-              </Button>
-            </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <div className="w-full sm:w-auto flex-grow">
+                  <Label htmlFor="waitingListEmail" className="sr-only">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                    <Input 
+                      id="waitingListEmail"
+                      type="email" 
+                      placeholder="Inserisci la tua email aziendale" 
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="pl-10 w-full"
+                    />
+                  </div>
+                </div>
+                <Button 
+                  type="submit" 
+                  size="lg" 
+                  className="bg-exitloop-purple hover:bg-exitloop-purple/90 w-full sm:w-auto"
+                >
+                  Iscriviti alla waiting list
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
