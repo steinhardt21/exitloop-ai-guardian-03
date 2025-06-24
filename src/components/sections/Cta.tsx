@@ -99,7 +99,7 @@ export const Cta = () => {
                   size="lg" 
                   className="bg-exitloop-purple hover:bg-exitloop-purple/90 w-full sm:w-auto"
                 >
-                  Registrati alla waiting list
+                  Registrati
                 </Button>
               </div>
             </form>
