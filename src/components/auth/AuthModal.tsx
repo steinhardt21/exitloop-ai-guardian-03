@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     password: ''
   });
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    // Reset form state when modal opens/closes
+    if (!isOpen) {
+      setError('');
+      setIsSubmitting(false);
+    }
+  }, [isOpen]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -37,11 +46,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       return;
     }
     
+    setIsSubmitting(true);
     try {
       await login(formData.email, formData.password);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Errore durante il login');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -52,11 +64,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       return;
     }
     
+    setIsSubmitting(true);
     try {
       await register(formData.name, formData.email, formData.password);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Errore durante la registrazione');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -146,9 +161,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               <Button 
                 type="submit" 
                 className="w-full bg-exitloop-purple hover:bg-exitloop-purple/90"
-                disabled={isLoading}
+                disabled={isLoading || isSubmitting}
               >
-                {isLoading ? (
+                {isLoading || isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Accesso in corso...
@@ -256,9 +271,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               <Button 
                 type="submit" 
                 className="w-full bg-exitloop-purple hover:bg-exitloop-purple/90"
-                disabled={isLoading}
+                disabled={isLoading || isSubmitting}
               >
-                {isLoading ? (
+                {isLoading || isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Registrazione in corso...

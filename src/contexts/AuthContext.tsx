@@ -72,6 +72,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Inizializza l'autenticazione
   useEffect(() => {
+    // Check for saved user in localStorage first (for demo)
+    const savedUser = localStorage.getItem('exitloop_user');
+    if (savedUser) {
+      try {
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser);
+        setIsLoading(false);
+        return; // Skip Supabase check if we have a saved user
+      } catch (error) {
+        localStorage.removeItem('exitloop_user');
+      }
+    }
+
     // Controlla se c'è già una sessione attiva
     const checkSession = async () => {
       try {
@@ -95,10 +108,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (session?.user) {
           const profile = await loadUserProfile(session.user);
           setUser(profile);
-        } else {
+        } else if (event === 'SIGNED_OUT') {
           setUser(null);
+          localStorage.removeItem('exitloop_user');
         }
-        setIsLoading(false);
       }
     );
 
@@ -174,31 +187,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async () => {
     try {
       setIsLoading(true);
+      // For demo users, just clear localStorage
+      if (localStorage.getItem('exitloop_user')) {
+        localStorage.removeItem('exitloop_user');
+        setUser(null);
+        return;
+      }
+      
+      // For real Supabase users
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       setUser(null);
-      localStorage.removeItem('exitloop_user');
     } catch (error) {
       console.error('Error during logout:', error);
     } finally {
       setIsLoading(false);
     }
   };
-
-  // Check for existing user on mount (per demo)
-  useEffect(() => {
-    const savedUser = localStorage.getItem('exitloop_user');
-    if (savedUser && !user) {
-      try {
-        const parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser);
-        setIsLoading(false);
-      } catch (error) {
-        localStorage.removeItem('exitloop_user');
-        setIsLoading(false);
-      }
-    }
-  }, [user]);
 
   const value = {
     user,
