@@ -3,7 +3,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AdminDashboard } from './AdminDashboard';
 import { OutgoingDashboard } from './OutgoingDashboard';
 import { IncomingDashboard } from './IncomingDashboard';
-import { UserDashboard } from './UserDashboard';
 
 interface DashboardContentProps {
   onNavigate?: (page: string, handoverId?: string) => void;
@@ -25,6 +24,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({ onNavigate }
     return <IncomingDashboard />;
   }
 
-  // Default fallback per compatibilità
-  return <UserDashboard />;
+  // Se per qualche motivo il ruolo non è definito, mostra la dashboard admin come fallback
+  console.warn('User role not defined, defaulting to admin dashboard');
+  return <AdminDashboard />;
 };

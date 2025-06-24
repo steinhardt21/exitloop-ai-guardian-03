@@ -44,6 +44,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Carica il profilo utente dal database quando l'utente Clerk è disponibile
   const loadUserProfile = async (clerkUserId: string, email: string) => {
     try {
+      console.log('Loading profile for email:', email);
+      
       // Prima controlla se esiste già un profilo
       const { data: existingProfile, error: fetchError } = await supabase
         .from('profiles')
@@ -52,6 +54,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .maybeSingle();
 
       if (existingProfile && !fetchError) {
+        console.log('Found existing profile:', existingProfile);
         return {
           id: existingProfile.id,
           email: existingProfile.email,
@@ -64,14 +67,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         };
       }
 
+      console.log('Creating new profile for:', email);
+
       // Se non esiste, crea un nuovo profilo
       // Controlla se c'è un invitation token nell'URL
       const invitationToken = searchParams.get('token');
-      let role: 'admin' | 'outgoing' | 'incoming' = 'admin'; // DEFAULT ADMIN
+      let role: 'admin' | 'outgoing' | 'incoming' = 'admin'; // DEFAULT SEMPRE ADMIN
       let position = 'Administrator';
       let department = 'Management';
       
       if (invitationToken) {
+        console.log('Found invitation token, checking invitation...');
         // Verifica l'invito e determina il ruolo
         const { data: invitation, error: inviteError } = await supabase
           .from('handover_invitations')
@@ -117,7 +123,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
         }
       } else {
-        // Logica migliorata per determinare il ruolo basato sull'email
+        // SOLO per testing: determina il ruolo basato sull'email
         const emailLower = email.toLowerCase();
         
         // Parole chiave per ruolo outgoing
@@ -213,9 +219,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (clerkUser) {
         const email = clerkUser.primaryEmailAddress?.emailAddress;
         if (email) {
-          console.log('Loading profile for email:', email);
           const profile = await loadUserProfile(clerkUser.id, email);
-          console.log('Loaded profile:', profile);
+          console.log('Final loaded profile:', profile);
           setUser(profile);
         }
       } else {
