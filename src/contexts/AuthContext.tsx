@@ -18,6 +18,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   logout: () => Promise<void>;
+  supabaseConnected: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,11 +41,86 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [searchParams] = useSearchParams();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [supabaseConnected, setSupabaseConnected] = useState(false);
 
-  // Carica il profilo utente dal database quando l'utente Clerk è disponibile
+  // Check if Supabase is properly configured
+  const checkSupabaseConnection = async () => {
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      // Check if environment variables are set to placeholder values
+      if (!supabaseUrl || !supabaseKey || 
+          supabaseUrl === 'https://your-project.supabase.co' || 
+          supabaseKey === 'your-anon-key') {
+        console.warn('Supabase not configured. Using mock user data.');
+        return false;
+      }
+
+      // Test the connection with a simple query
+      const { error } = await supabase.from('organizations').select('id').limit(1);
+      if (error) {
+        console.warn('Supabase connection failed:', error.message);
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.warn('Supabase connection test failed:', error);
+      return false;
+    }
+  };
+
+  // Create a mock user when Supabase is not available
+  const createMockUser = (clerkUserId: string, email: string): User => {
+    const emailLower = email.toLowerCase();
+    
+    // Determine role based on email patterns
+    let role: 'admin' | 'outgoing' | 'incoming' = 'admin';
+    let position = 'Administrator';
+    let department = 'Management';
+    
+    const outgoingKeywords = ['outgoing', 'uscente', 'leaving', 'departing', 'exit'];
+    const incomingKeywords = ['incoming', 'entrante', 'new', 'nuovo', 'onboarding'];
+    
+    const isOutgoing = outgoingKeywords.some(keyword => emailLower.includes(keyword));
+    const isIncoming = incomingKeywords.some(keyword => emailLower.includes(keyword));
+    
+    if (isOutgoing) {
+      role = 'outgoing';
+      position = 'CTO';
+      department = 'Technology';
+    } else if (isIncoming) {
+      role = 'incoming';
+      position = 'New CTO';
+      department = 'Technology';
+    }
+
+    return {
+      id: clerkUserId,
+      email,
+      full_name: clerkUser?.fullName || email.split('@')[0].replace('.', ' '),
+      avatar_url: clerkUser?.imageUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
+      role,
+      organization_id: 'mock-org-id',
+      department,
+      position
+    };
+  };
+
+  // Load user profile from database when Clerk user is available
   const loadUserProfile = async (clerkUserId: string, email: string) => {
     try {
-      // Prima controlla se esiste già un profilo
+      // Check if Supabase is connected
+      const isConnected = await checkSupabaseConnection();
+      setSupabaseConnected(isConnected);
+      
+      if (!isConnected) {
+        // Return mock user if Supabase is not connected
+        return createMockUser(clerkUserId, email);
+      }
+
+      // First check if profile already exists
       const { data: existingProfile, error: fetchError } = await supabase
         .from('profiles')
         .select('*')
@@ -64,15 +140,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         };
       }
 
-      // Se non esiste, crea un nuovo profilo
-      // Controlla se c'è un invitation token nell'URL
+      // If doesn't exist, create new profile
+      // Check if there's an invitation token in URL
       const invitationToken = searchParams.get('token');
       let role: 'admin' | 'outgoing' | 'incoming' = 'admin'; // DEFAULT ADMIN
       let position = 'Administrator';
       let department = 'Management';
       
       if (invitationToken) {
-        // Verifica l'invito e determina il ruolo
+        // Verify invitation and determine role
         const { data: invitation, error: inviteError } = await supabase
           .from('handover_invitations')
           .select(`
@@ -88,14 +164,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           .single();
 
         if (!inviteError && invitation) {
-          // Controlla se l'invito è ancora valido
+          // Check if invitation is still valid
           const expiresAt = new Date(invitation.expires_at);
           const now = new Date();
           
           if (now <= expiresAt) {
-            // Determina il ruolo basato sull'handover
-            // Se l'handover ha già un outgoing_user_id, questo utente è incoming
-            // Altrimenti è outgoing
+            // Determine role based on handover
+            // If handover already has outgoing_user_id, this user is incoming
+            // Otherwise is outgoing
             if (invitation.handover.outgoing_user_id) {
               role = 'incoming';
               position = 'New Employee';
@@ -106,7 +182,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               department = 'Various';
             }
 
-            // Aggiorna lo stato dell'invito
+            // Update invitation status
             await supabase
               .from('handover_invitations')
               .update({ 
@@ -117,12 +193,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
         }
       } else {
-        // Logica migliorata per determinare il ruolo basato sull'email
+        // Improved logic to determine role based on email
         const emailLower = email.toLowerCase();
         
-        // Parole chiave per ruolo outgoing
+        // Keywords for outgoing role
         const outgoingKeywords = ['outgoing', 'uscente', 'leaving', 'departing', 'exit'];
-        // Parole chiave per ruolo incoming  
+        // Keywords for incoming role
         const incomingKeywords = ['incoming', 'entrante', 'new', 'nuovo', 'onboarding'];
         
         const isOutgoing = outgoingKeywords.some(keyword => emailLower.includes(keyword));
@@ -137,10 +213,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           position = 'New CTO';
           department = 'Technology';
         }
-        // Altrimenti rimane admin (default)
+        // Otherwise remains admin (default)
       }
 
-      // Crea una nuova organizzazione se non esiste
+      // Create new organization if doesn't exist
       let organizationId = 'default-org-id';
       const { data: org } = await supabase
         .from('organizations')
@@ -165,7 +241,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         organizationId = org.id;
       }
 
-      // Crea il nuovo profilo
+      // Create new profile
       const { data: newProfile, error: createError } = await supabase
         .from('profiles')
         .insert({
@@ -183,7 +259,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (createError) {
         console.error('Error creating profile:', createError);
-        return null;
+        // Fallback to mock user if database creation fails
+        return createMockUser(clerkUserId, email);
       }
 
       console.log('Created new profile with role:', role, 'for email:', email);
@@ -200,7 +277,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       };
     } catch (error) {
       console.error('Error in loadUserProfile:', error);
-      return null;
+      // Fallback to mock user on any error
+      return createMockUser(clerkUserId, email);
     }
   };
 
@@ -236,7 +314,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const value = {
     user,
     isLoading: isLoading || !isLoaded,
-    logout
+    logout,
+    supabaseConnected
   };
 
   return (
