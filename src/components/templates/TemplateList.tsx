@@ -76,25 +76,38 @@ export const TemplateList: React.FC<TemplateListProps> = ({
     setSelectedTemplate(null);
   };
 
+  // Card speciale per creare nuovo template
+  const CreateTemplateCard = () => (
+    <Card className="border-dashed border-2 border-exitloop-purple/30 hover:border-exitloop-purple/50 transition-colors cursor-pointer bg-exitloop-purple/5 hover:bg-exitloop-purple/10">
+      <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+        <div className="w-16 h-16 bg-exitloop-purple/20 rounded-full flex items-center justify-center mb-4">
+          <Plus size={32} className="text-exitloop-purple" />
+        </div>
+        <h4 className="text-lg font-semibold text-exitloop-purple mb-2">
+          Crea un nuovo Template
+        </h4>
+        <p className="text-gray-600 text-sm">
+          Aggiungi un nuovo template per i tuoi handover
+        </p>
+      </CardContent>
+    </Card>
+  );
+
   if (templates.length === 0) {
     return (
-      <Card className="border-dashed border-2 border-gray-300">
-        <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-          <FileText size={48} className="text-gray-400 mb-4" />
-          <h4 className="text-lg font-medium text-gray-600 mb-2">
-            Nessun template disponibile
-          </h4>
-          <p className="text-gray-500">
-            I template creati appariranno qui
-          </p>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <CreateTemplateCard />
+      </div>
     );
   }
 
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Card per creare nuovo template */}
+        <CreateTemplateCard />
+        
+        {/* Template esistenti */}
         {templates.map((template) => (
           <Card key={template.id} className="hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">

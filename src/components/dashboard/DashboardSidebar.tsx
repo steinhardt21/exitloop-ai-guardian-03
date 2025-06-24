@@ -14,7 +14,8 @@ import {
   Briefcase,
   BarChart3,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
+  BookTemplate
 } from 'lucide-react';
 
 interface SidebarItemProps {
@@ -58,9 +59,23 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, active, onClick,
   return buttonContent;
 };
 
-export const DashboardSidebar: React.FC = () => {
+interface DashboardSidebarProps {
+  onNavigate?: (page: string) => void;
+  currentPage?: string;
+}
+
+export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ 
+  onNavigate, 
+  currentPage = 'home' 
+}) => {
   const { user, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(true);
+
+  const handleNavigation = (page: string) => {
+    if (onNavigate) {
+      onNavigate(page);
+    }
+  };
 
   return (
     <div className={`${collapsed ? 'w-16' : 'w-64'} bg-white border-r border-gray-200 flex flex-col h-screen transition-all duration-300 ease-in-out`}>
@@ -119,17 +134,29 @@ export const DashboardSidebar: React.FC = () => {
         <SidebarItem 
           icon={<Home size={20} />} 
           label="Home" 
-          active={true}
+          active={currentPage === 'home'}
+          onClick={() => handleNavigation('home')}
           collapsed={collapsed}
         />
         <SidebarItem 
           icon={<FileText size={20} />} 
           label="Handovers" 
+          active={currentPage === 'handovers'}
+          onClick={() => handleNavigation('handovers')}
+          collapsed={collapsed}
+        />
+        <SidebarItem 
+          icon={<BookTemplate size={20} />} 
+          label="Template" 
+          active={currentPage === 'templates'}
+          onClick={() => handleNavigation('templates')}
           collapsed={collapsed}
         />
         <SidebarItem 
           icon={<Search size={20} />} 
           label="Search" 
+          active={currentPage === 'search'}
+          onClick={() => handleNavigation('search')}
           collapsed={collapsed}
         />
         
@@ -138,16 +165,22 @@ export const DashboardSidebar: React.FC = () => {
         <SidebarItem 
           icon={<Zap size={20} />} 
           label="Integrations" 
+          active={currentPage === 'integrations'}
+          onClick={() => handleNavigation('integrations')}
           collapsed={collapsed}
         />
         <SidebarItem 
           icon={<Briefcase size={20} />} 
           label="Template Setup" 
+          active={currentPage === 'template-setup'}
+          onClick={() => handleNavigation('template-setup')}
           collapsed={collapsed}
         />
         <SidebarItem 
           icon={<Settings size={20} />} 
           label="Workspace Settings" 
+          active={currentPage === 'settings'}
+          onClick={() => handleNavigation('settings')}
           collapsed={collapsed}
         />
 
@@ -156,6 +189,8 @@ export const DashboardSidebar: React.FC = () => {
         <SidebarItem 
           icon={<HelpCircle size={20} />} 
           label="Support" 
+          active={currentPage === 'support'}
+          onClick={() => handleNavigation('support')}
           collapsed={collapsed}
         />
       </nav>

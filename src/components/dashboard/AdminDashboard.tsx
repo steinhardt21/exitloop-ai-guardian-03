@@ -296,26 +296,18 @@ export const AdminDashboard: React.FC = () => {
             </p>
           </div>
           
-          {/* Azioni rapide */}
+          {/* Azioni rapide - MODIFICATO: Rinominato pulsante e rimosso Explore Template */}
           <div className="flex gap-3">
-            <Button 
-              variant="outline" 
-              className="gap-2"
-              onClick={() => setShowTemplateList(true)}
-            >
-              <Template size={16} />
-              Esplora Template
-            </Button>
             <Button variant="outline" className="gap-2">
               <UserPlus size={16} />
               Invita Utente
             </Button>
             <Button 
               className="bg-exitloop-purple hover:bg-exitloop-purple/90 gap-2"
-              onClick={() => setIsCreateTemplateOpen(true)}
+              onClick={() => setShowTemplateList(true)}
             >
               <Plus size={16} />
-              Nuovo Template
+              Crea nuovo Handover
             </Button>
           </div>
         </div>
