@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { CreateHandoverModal } from '@/components/handovers/CreateHandoverModal';
+import { CreateTemplateModal } from '@/components/templates/CreateTemplateModal';
 
 interface Template {
   id: string;
@@ -37,6 +38,8 @@ interface TemplateListProps {
   onDuplicate: (template: Template) => void;
   onDelete: (templateId: string) => void;
   onHandoverCreated?: (handover: any) => void;
+  onTemplateCreated?: (template: Template) => void;
+  onTemplateUpdated?: (template: Template) => void;
 }
 
 export const TemplateList: React.FC<TemplateListProps> = ({
@@ -44,10 +47,14 @@ export const TemplateList: React.FC<TemplateListProps> = ({
   onEdit,
   onDuplicate,
   onDelete,
-  onHandoverCreated
+  onHandoverCreated,
+  onTemplateCreated,
+  onTemplateUpdated
 }) => {
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [isCreateHandoverOpen, setIsCreateHandoverOpen] = useState(false);
+  const [isCreateTemplateOpen, setIsCreateTemplateOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('it-IT', {
@@ -76,9 +83,38 @@ export const TemplateList: React.FC<TemplateListProps> = ({
     setSelectedTemplate(null);
   };
 
+  const handleCreateNewTemplate = () => {
+    setEditingTemplate(null);
+    setIsCreateTemplateOpen(true);
+  };
+
+  const handleEditTemplate = (template: Template) => {
+    setEditingTemplate(template);
+    setIsCreateTemplateOpen(true);
+  };
+
+  const handleTemplateCreated = (template: Template) => {
+    if (onTemplateCreated) {
+      onTemplateCreated(template);
+    }
+    setIsCreateTemplateOpen(false);
+    setEditingTemplate(null);
+  };
+
+  const handleTemplateUpdated = (template: Template) => {
+    if (onTemplateUpdated) {
+      onTemplateUpdated(template);
+    }
+    setIsCreateTemplateOpen(false);
+    setEditingTemplate(null);
+  };
+
   // Card speciale per creare nuovo template
   const CreateTemplateCard = () => (
-    <Card className="border-dashed border-2 border-exitloop-purple/30 hover:border-exitloop-purple/50 transition-colors cursor-pointer bg-exitloop-purple/5 hover:bg-exitloop-purple/10">
+    <Card 
+      className="border-dashed border-2 border-exitloop-purple/30 hover:border-exitloop-purple/50 transition-colors cursor-pointer bg-exitloop-purple/5 hover:bg-exitloop-purple/10"
+      onClick={handleCreateNewTemplate}
+    >
       <CardContent className="flex flex-col items-center justify-center py-12 text-center">
         <div className="w-16 h-16 bg-exitloop-purple/20 rounded-full flex items-center justify-center mb-4">
           <Plus size={32} className="text-exitloop-purple" />
@@ -92,14 +128,6 @@ export const TemplateList: React.FC<TemplateListProps> = ({
       </CardContent>
     </Card>
   );
-
-  if (templates.length === 0) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <CreateTemplateCard />
-      </div>
-    );
-  }
 
   return (
     <>
@@ -140,7 +168,7 @@ export const TemplateList: React.FC<TemplateListProps> = ({
                       Crea Handover
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => onEdit(template)}>
+                    <DropdownMenuItem onClick={() => handleEditTemplate(template)}>
                       <Edit size={14} className="mr-2" />
                       Modifica
                     </DropdownMenuItem>
@@ -194,7 +222,7 @@ export const TemplateList: React.FC<TemplateListProps> = ({
                   <Button 
                     variant="outline" 
                     className="w-full gap-2"
-                    onClick={() => onEdit(template)}
+                    onClick={() => handleEditTemplate(template)}
                   >
                     <Edit size={14} />
                     Modifica Template
@@ -206,6 +234,7 @@ export const TemplateList: React.FC<TemplateListProps> = ({
         ))}
       </div>
 
+      {/* Modal per creare handover */}
       <CreateHandoverModal
         isOpen={isCreateHandoverOpen}
         onClose={() => {
@@ -214,6 +243,17 @@ export const TemplateList: React.FC<TemplateListProps> = ({
         }}
         template={selectedTemplate}
         onHandoverCreated={handleHandoverCreated}
+      />
+
+      {/* Modal per creare/modificare template */}
+      <CreateTemplateModal
+        isOpen={isCreateTemplateOpen}
+        onClose={() => {
+          setIsCreateTemplateOpen(false);
+          setEditingTemplate(null);
+        }}
+        template={editingTemplate}
+        onSave={editingTemplate ? handleTemplateUpdated : handleTemplateCreated}
       />
     </>
   );

@@ -16,8 +16,21 @@ const Dashboard: React.FC = () => {
       id: '1',
       name: 'CTO Handover',
       sections: [
-        { title: 'Responsabilità Tecniche', questions: ['Quali sono le principali responsabilità tecniche?', 'Chi sono i referenti tecnici chiave?'] },
-        { title: 'Progetti in Corso', questions: ['Quali progetti sono attualmente in sviluppo?'] }
+        { 
+          id: 'sec1',
+          title: 'Responsabilità Tecniche', 
+          questions: [
+            { id: 'q1', text: 'Quali sono le principali responsabilità tecniche?' },
+            { id: 'q2', text: 'Chi sono i referenti tecnici chiave?' }
+          ]
+        },
+        { 
+          id: 'sec2',
+          title: 'Progetti in Corso', 
+          questions: [
+            { id: 'q3', text: 'Quali progetti sono attualmente in sviluppo?' }
+          ]
+        }
       ],
       createdAt: '2024-01-15T10:00:00Z',
       createdBy: 'Admin',
@@ -27,8 +40,20 @@ const Dashboard: React.FC = () => {
       id: '2',
       name: 'Marketing Manager',
       sections: [
-        { title: 'Campagne Attive', questions: ['Quali campagne sono attualmente attive?'] },
-        { title: 'Tool e Processi', questions: ['Quali tool utilizzi quotidianamente?'] }
+        { 
+          id: 'sec3',
+          title: 'Campagne Attive', 
+          questions: [
+            { id: 'q4', text: 'Quali campagne sono attualmente attive?' }
+          ]
+        },
+        { 
+          id: 'sec4',
+          title: 'Tool e Processi', 
+          questions: [
+            { id: 'q5', text: 'Quali tool utilizzi quotidianamente?' }
+          ]
+        }
       ],
       createdAt: '2024-01-10T14:30:00Z',
       createdBy: 'Admin',
@@ -38,8 +63,21 @@ const Dashboard: React.FC = () => {
       id: '3',
       name: 'Developer Senior',
       sections: [
-        { title: 'Codice e Repository', questions: ['Quali sono i repository principali?', 'Dove si trova la documentazione tecnica?'] },
-        { title: 'Deployment', questions: ['Come funziona il processo di deploy?'] }
+        { 
+          id: 'sec5',
+          title: 'Codice e Repository', 
+          questions: [
+            { id: 'q6', text: 'Quali sono i repository principali?' },
+            { id: 'q7', text: 'Dove si trova la documentazione tecnica?' }
+          ]
+        },
+        { 
+          id: 'sec6',
+          title: 'Deployment', 
+          questions: [
+            { id: 'q8', text: 'Come funziona il processo di deploy?' }
+          ]
+        }
       ],
       createdAt: '2024-01-08T09:15:00Z',
       createdBy: 'Admin',
@@ -57,7 +95,15 @@ const Dashboard: React.FC = () => {
   };
 
   const handleEditTemplate = (template: any) => {
-    toast.info(`Modifica template: ${template.name}`);
+    // Questa funzione ora viene gestita direttamente dal TemplateList
+    // tramite il modal di modifica
+  };
+
+  const handleUpdateTemplate = (updatedTemplate: any) => {
+    setTemplates(templates.map(t => 
+      t.id === updatedTemplate.id ? updatedTemplate : t
+    ));
+    toast.success(`Template "${updatedTemplate.name}" modificato con successo!`);
   };
 
   const handleDuplicateTemplate = (template: any) => {
@@ -115,6 +161,8 @@ const Dashboard: React.FC = () => {
                 onDuplicate={handleDuplicateTemplate}
                 onDelete={handleDeleteTemplate}
                 onHandoverCreated={handleHandoverCreated}
+                onTemplateCreated={handleCreateTemplate}
+                onTemplateUpdated={handleUpdateTemplate}
               />
             </div>
           </div>

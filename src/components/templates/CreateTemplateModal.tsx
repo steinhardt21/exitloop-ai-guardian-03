@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +16,8 @@ import {
   Save,
   X,
   FileText,
-  HelpCircle
+  HelpCircle,
+  Edit
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from '@/components/ui/sonner';
@@ -33,20 +34,53 @@ interface Section {
   isOpen: boolean;
 }
 
+interface Template {
+  id: string;
+  name: string;
+  sections: any[];
+  createdAt: string;
+  createdBy: string;
+  usageCount?: number;
+}
+
 interface CreateTemplateModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (template: any) => void;
+  template?: Template | null; // Template da modificare (opzionale)
 }
 
 export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
   isOpen,
   onClose,
-  onSave
+  onSave,
+  template
 }) => {
   const [templateName, setTemplateName] = useState('');
   const [sections, setSections] = useState<Section[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  const isEditing = !!template;
+
+  // Carica i dati del template quando si apre in modalità modifica
+  useEffect(() => {
+    if (isOpen && template) {
+      setTemplateName(template.name);
+      setSections(template.sections.map(section => ({
+        ...section,
+        id: section.id || generateId(),
+        questions: section.questions.map((q: any) => ({
+          id: q.id || generateId(),
+          text: q.text || q
+        })),
+        isOpen: true
+      })));
+    } else if (isOpen && !template) {
+      // Reset per nuovo template
+      setTemplateName('');
+      setSections([]);
+    }
+  }, [isOpen, template]);
 
   const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -161,8 +195,8 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
       // Simula salvataggio
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const template = {
-        id: generateId(),
+      const templateData = {
+        id: template?.id || generateId(),
         name: templateName,
         sections: sections.filter(section => 
           section.title.trim() && section.questions.some(q => q.text.trim())
@@ -170,12 +204,19 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
           ...section,
           questions: section.questions.filter(q => q.text.trim())
         })),
-        createdAt: new Date().toISOString(),
-        createdBy: 'Admin'
+        createdAt: template?.createdAt || new Date().toISOString(),
+        createdBy: template?.createdBy || 'Admin',
+        usageCount: template?.usageCount || 0
       };
 
-      onSave(template);
-      toast.success('Template creato con successo!');
+      onSave(templateData);
+      
+      if (isEditing) {
+        toast.success('Template modificato con successo!');
+      } else {
+        toast.success('Template creato con successo!');
+      }
+      
       handleClose();
     } catch (error) {
       toast.error('Errore durante il salvataggio del template');
@@ -195,8 +236,17 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FileText size={20} className="text-exitloop-purple" />
-            Crea Nuovo Template
+            {isEditing ? (
+              <>
+                <Edit size={20} className="text-exitloop-purple" />
+                Modifica Template
+              </>
+            ) : (
+              <>
+                <FileText size={20} className="text-exitloop-purple" />
+                Crea Nuovo Template
+              </>
+            )}
           </DialogTitle>
         </DialogHeader>
 
@@ -384,12 +434,12 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
               {isLoading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Salvataggio...
+                  {isEditing ? 'Salvataggio...' : 'Creazione...'}
                 </>
               ) : (
                 <>
                   <Save size={16} />
-                  Salva Template
+                  {isEditing ? 'Salva Modifiche' : 'Salva Template'}
                 </>
               )}
             </Button>
