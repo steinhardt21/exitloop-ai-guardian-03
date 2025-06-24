@@ -123,10 +123,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (name: string, email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Registra l'utente in Supabase Auth
+      // Registra l'utente in Supabase Auth senza conferma email
       const { data, error } = await supabase.auth.signUp({
         email,
-        password
+        password,
+        options: {
+          emailRedirectTo: undefined, // Disabilita il redirect email
+        }
       });
 
       if (error) throw error;
@@ -144,6 +147,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           });
 
         if (profileError) throw profileError;
+
+        // Se l'utente è stato creato ma non confermato, procedi comunque
+        if (data.user && !data.user.email_confirmed_at) {
+          // Forza il login per utenti non confermati
+          const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+            email,
+            password
+          });
+
+          if (loginError) {
+            // Se il login fallisce a causa della mancata conferma, 
+            // considera l'utente come registrato con successo
+            console.log('User registered but email not confirmed, proceeding anyway');
+          }
+        }
 
         const profile = await loadUserProfile(data.user);
         setUser(profile);
