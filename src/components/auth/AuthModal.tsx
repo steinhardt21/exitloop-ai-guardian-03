@@ -32,6 +32,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.email || !formData.password) {
+      setError('Inserisci email e password');
+      return;
+    }
+    
     try {
       await login(formData.email, formData.password);
       onClose();
@@ -42,12 +47,41 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.name || !formData.email || !formData.password) {
+      setError('Compila tutti i campi');
+      return;
+    }
+    
     try {
       await register(formData.name, formData.email, formData.password);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Errore durante la registrazione');
     }
+  };
+
+  // For demo purposes - quick login with mock users
+  const handleQuickLogin = (role: string) => {
+    let email = '';
+    switch(role) {
+      case 'admin':
+        email = 'admin@techcorp.it';
+        break;
+      case 'outgoing':
+        email = 'marco.bianchi@techcorp.it';
+        break;
+      case 'incoming':
+        email = 'sofia.ferrari@techcorp.it';
+        break;
+      default:
+        email = 'admin@techcorp.it';
+    }
+    
+    setFormData({
+      ...formData,
+      email,
+      password: 'demo123'
+    });
   };
 
   return (
@@ -123,6 +157,40 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   'Accedi'
                 )}
               </Button>
+              
+              {/* Demo Quick Login Buttons */}
+              <div className="pt-2 border-t border-gray-200">
+                <p className="text-xs text-gray-500 mb-2 text-center">Demo: Accesso rapido come</p>
+                <div className="flex gap-2 justify-center">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleQuickLogin('admin')}
+                    className="text-xs"
+                  >
+                    Admin
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleQuickLogin('outgoing')}
+                    className="text-xs"
+                  >
+                    Uscente
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleQuickLogin('incoming')}
+                    className="text-xs"
+                  >
+                    Entrante
+                  </Button>
+                </div>
+              </div>
             </form>
           </TabsContent>
 

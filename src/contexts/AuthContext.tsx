@@ -73,16 +73,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Inizializza l'autenticazione
   useEffect(() => {
     // Controlla se c'è già una sessione attiva
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        loadUserProfile(session.user).then(profile => {
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const profile = await loadUserProfile(session.user);
           setUser(profile);
-          setIsLoading(false);
-        });
-      } else {
+        }
+      } catch (error) {
+        console.error('Error checking session:', error);
+      } finally {
         setIsLoading(false);
       }
-    });
+    };
+
+    checkSession();
 
     // Ascolta i cambiamenti di autenticazione
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -101,14 +106,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const login = async (email: string, password: string) => {
-    setIsLoading(true);
     try {
+      setIsLoading(true);
+      
       // Per demo: controlla se è un utente mock
       const mockUser = getMockUserByEmail(email);
       if (mockUser && password === 'demo123') {
         setUser(mockUser);
         localStorage.setItem('exitloop_user', JSON.stringify(mockUser));
-        setIsLoading(false);
         return;
       }
 
@@ -131,8 +136,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const register = async (name: string, email: string, password: string) => {
-    setIsLoading(true);
     try {
+      setIsLoading(true);
+      
       // Registra l'utente in Supabase Auth
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -167,12 +173,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async () => {
     try {
+      setIsLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       setUser(null);
       localStorage.removeItem('exitloop_user');
     } catch (error) {
       console.error('Error during logout:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -183,8 +192,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         const parsedUser = JSON.parse(savedUser);
         setUser(parsedUser);
+        setIsLoading(false);
       } catch (error) {
         localStorage.removeItem('exitloop_user');
+        setIsLoading(false);
       }
     }
   }, [user]);
