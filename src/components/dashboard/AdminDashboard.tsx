@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,8 +19,38 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { CreateTemplateModal } from '@/components/templates/CreateTemplateModal';
+import { TemplateList } from '@/components/templates/TemplateList';
+import { toast } from '@/components/ui/sonner';
 
 export const AdminDashboard: React.FC = () => {
+  const [isCreateTemplateOpen, setIsCreateTemplateOpen] = useState(false);
+  const [showTemplateList, setShowTemplateList] = useState(false);
+  const [templates, setTemplates] = useState([
+    {
+      id: '1',
+      name: 'CTO Handover',
+      sections: [
+        { title: 'Responsabilità Tecniche', questions: ['Quali sono le principali responsabilità tecniche?', 'Chi sono i referenti tecnici chiave?'] },
+        { title: 'Progetti in Corso', questions: ['Quali progetti sono attualmente in sviluppo?'] }
+      ],
+      createdAt: '2024-01-15T10:00:00Z',
+      createdBy: 'Admin',
+      usageCount: 5
+    },
+    {
+      id: '2',
+      name: 'Marketing Manager',
+      sections: [
+        { title: 'Campagne Attive', questions: ['Quali campagne sono attualmente attive?'] },
+        { title: 'Tool e Processi', questions: ['Quali tool utilizzi quotidianamente?'] }
+      ],
+      createdAt: '2024-01-10T14:30:00Z',
+      createdBy: 'Admin',
+      usageCount: 3
+    }
+  ]);
+
   // Mock data per la dashboard
   const stats = {
     users: {
@@ -35,7 +65,7 @@ export const AdminDashboard: React.FC = () => {
       completed: 20,
       pending: 4
     },
-    templates: 8
+    templates: templates.length
   };
 
   const handovers = [
@@ -129,6 +159,34 @@ export const AdminDashboard: React.FC = () => {
     }
   ];
 
+  const handleCreateTemplate = (template: any) => {
+    setTemplates([...templates, template]);
+    toast.success(`Template "${template.name}" creato con successo!`);
+  };
+
+  const handleEditTemplate = (template: any) => {
+    // Per ora mostra solo un messaggio, in futuro aprirà il modal di modifica
+    toast.info(`Modifica template: ${template.name}`);
+  };
+
+  const handleDuplicateTemplate = (template: any) => {
+    const duplicatedTemplate = {
+      ...template,
+      id: Math.random().toString(36).substr(2, 9),
+      name: `${template.name} (Copia)`,
+      createdAt: new Date().toISOString(),
+      usageCount: 0
+    };
+    setTemplates([...templates, duplicatedTemplate]);
+    toast.success(`Template "${template.name}" duplicato con successo!`);
+  };
+
+  const handleDeleteTemplate = (templateId: string) => {
+    const template = templates.find(t => t.id === templateId);
+    setTemplates(templates.filter(t => t.id !== templateId));
+    toast.success(`Template "${template?.name}" eliminato con successo!`);
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'in-progress':
@@ -168,6 +226,54 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  if (showTemplateList) {
+    return (
+      <div className="flex-1 bg-gray-50 overflow-auto">
+        <div className="p-8">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Gestione Template
+              </h1>
+              <p className="text-gray-600">
+                Crea e gestisci i template per gli handover
+              </p>
+            </div>
+            
+            <div className="flex gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowTemplateList(false)}
+              >
+                Torna alla Dashboard
+              </Button>
+              <Button 
+                className="bg-exitloop-purple hover:bg-exitloop-purple/90 gap-2"
+                onClick={() => setIsCreateTemplateOpen(true)}
+              >
+                <Plus size={16} />
+                Nuovo Template
+              </Button>
+            </div>
+          </div>
+
+          <TemplateList
+            templates={templates}
+            onEdit={handleEditTemplate}
+            onDuplicate={handleDuplicateTemplate}
+            onDelete={handleDeleteTemplate}
+          />
+
+          <CreateTemplateModal
+            isOpen={isCreateTemplateOpen}
+            onClose={() => setIsCreateTemplateOpen(false)}
+            onSave={handleCreateTemplate}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 bg-gray-50 overflow-auto">
       <div className="p-8">
@@ -184,7 +290,11 @@ export const AdminDashboard: React.FC = () => {
           
           {/* Azioni rapide */}
           <div className="flex gap-3">
-            <Button variant="outline" className="gap-2">
+            <Button 
+              variant="outline" 
+              className="gap-2"
+              onClick={() => setShowTemplateList(true)}
+            >
               <Template size={16} />
               Esplora Template
             </Button>
@@ -192,7 +302,10 @@ export const AdminDashboard: React.FC = () => {
               <UserPlus size={16} />
               Invita Utente
             </Button>
-            <Button className="bg-exitloop-purple hover:bg-exitloop-purple/90 gap-2">
+            <Button 
+              className="bg-exitloop-purple hover:bg-exitloop-purple/90 gap-2"
+              onClick={() => setIsCreateTemplateOpen(true)}
+            >
               <Plus size={16} />
               Nuovo Template
             </Button>
@@ -418,6 +531,12 @@ export const AdminDashboard: React.FC = () => {
             </Table>
           </CardContent>
         </Card>
+
+        <CreateTemplateModal
+          isOpen={isCreateTemplateOpen}
+          onClose={() => setIsCreateTemplateOpen(false)}
+          onSave={handleCreateTemplate}
+        />
       </div>
     </div>
   );
