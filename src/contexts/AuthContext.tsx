@@ -151,15 +151,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (error) throw error;
 
-      if (data.user) {
-        const profile = await loadUserProfile(data.user);
-        setUser(profile);
-      }
+      // Non impostare manualmente l'utente qui, lascia che lo faccia onAuthStateChange
+      // if (data.user) {
+      //   const profile = await loadUserProfile(data.user);
+      //   setUser(profile);
+      // }
     } catch (error) {
+      setIsLoading(false); // Reset loading solo in caso di errore
       throw new Error(error instanceof Error ? error.message : 'Errore durante il login');
-    } finally {
-      setIsLoading(false);
     }
+    // Non resettare isLoading qui, lo farà onAuthStateChange
   };
 
   const register = async (name: string, email: string, password: string) => {
@@ -218,25 +219,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         if (profileError) throw profileError;
 
-        const profile = await loadUserProfile(data.user);
-        setUser(profile);
+        // Non impostare manualmente l'utente qui, lascia che lo faccia onAuthStateChange
+        // const profile = await loadUserProfile(data.user);
+        // setUser(profile);
       }
     } catch (error) {
+      setIsLoading(false); // Reset loading solo in caso di errore
       throw new Error(error instanceof Error ? error.message : 'Errore durante la registrazione');
-    } finally {
-      setIsLoading(false);
     }
+    // Non resettare isLoading qui, lo farà onAuthStateChange
   };
 
   const logout = async () => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      setUser(null);
+      // Non impostare manualmente setUser(null), lo farà onAuthStateChange
     } catch (error) {
       console.error('Error during logout:', error);
       // Forza il logout locale anche se c'è un errore
       setUser(null);
+      setIsLoading(false);
     }
   };
 
