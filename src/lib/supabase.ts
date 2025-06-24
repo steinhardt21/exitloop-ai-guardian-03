@@ -3,13 +3,55 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
-}
+// Check if Supabase is properly configured
+const isSupabaseConfigured = () => {
+  return supabaseUrl && 
+         supabaseAnonKey && 
+         supabaseUrl !== 'https://your-project.supabase.co' && 
+         supabaseAnonKey !== 'your-anon-key' &&
+         !supabaseUrl.includes('your-project');
+};
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Create a mock client for when Supabase is not configured
+const createMockClient = () => {
+  const mockResponse = { data: null, error: new Error('Supabase not configured') };
+  
+  return {
+    from: () => ({
+      select: () => ({ 
+        eq: () => ({ 
+          maybeSingle: () => Promise.resolve(mockResponse),
+          single: () => Promise.resolve(mockResponse),
+          limit: () => Promise.resolve(mockResponse)
+        }),
+        limit: () => Promise.resolve(mockResponse)
+      }),
+      insert: () => ({ 
+        select: () => ({ 
+          single: () => Promise.resolve(mockResponse) 
+        })
+      }),
+      update: () => ({ 
+        eq: () => Promise.resolve(mockResponse) 
+      }),
+      upsert: () => Promise.resolve(mockResponse)
+    }),
+    auth: {
+      getUser: () => Promise.resolve(mockResponse),
+      signOut: () => Promise.resolve(mockResponse)
+    }
+  };
+};
 
-// Types per il database
+// Export either real Supabase client or mock client
+export const supabase = isSupabaseConfigured() 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : createMockClient();
+
+// Export configuration status
+export const isSupabaseReady = isSupabaseConfigured();
+
+// Types for the database (unchanged)
 export interface Database {
   public: {
     Tables: {

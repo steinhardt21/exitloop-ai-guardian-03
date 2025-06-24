@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useUser, useAuth as useClerkAuth } from '@clerk/clerk-react';
 import { useSearchParams } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseReady } from '@/lib/supabase';
 
 interface User {
   id: string;
@@ -41,35 +41,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [searchParams] = useSearchParams();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [supabaseConnected, setSupabaseConnected] = useState(false);
-
-  // Check if Supabase is properly configured
-  const checkSupabaseConnection = async () => {
-    try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      
-      // Check if environment variables are set to placeholder values
-      if (!supabaseUrl || !supabaseKey || 
-          supabaseUrl === 'https://your-project.supabase.co' || 
-          supabaseKey === 'your-anon-key') {
-        console.warn('Supabase not configured. Using mock user data.');
-        return false;
-      }
-
-      // Test the connection with a simple query
-      const { error } = await supabase.from('organizations').select('id').limit(1);
-      if (error) {
-        console.warn('Supabase connection failed:', error.message);
-        return false;
-      }
-      
-      return true;
-    } catch (error) {
-      console.warn('Supabase connection test failed:', error);
-      return false;
-    }
-  };
+  const [supabaseConnected, setSupabaseConnected] = useState(isSupabaseReady);
 
   // Create a mock user when Supabase is not available
   const createMockUser = (clerkUserId: string, email: string): User => {
@@ -96,6 +68,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       department = 'Technology';
     }
 
+    console.log(`Created mock user with role: ${role} for email: ${email}`);
+
     return {
       id: clerkUserId,
       email,
@@ -111,12 +85,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Load user profile from database when Clerk user is available
   const loadUserProfile = async (clerkUserId: string, email: string) => {
     try {
-      // Check if Supabase is connected
-      const isConnected = await checkSupabaseConnection();
-      setSupabaseConnected(isConnected);
-      
-      if (!isConnected) {
-        // Return mock user if Supabase is not connected
+      // If Supabase is not configured, use mock user immediately
+      if (!supabaseConnected) {
+        console.log('Supabase not configured, using mock user');
         return createMockUser(clerkUserId, email);
       }
 
@@ -128,6 +99,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .maybeSingle();
 
       if (existingProfile && !fetchError) {
+        console.log('Found existing profile:', existingProfile);
         return {
           id: existingProfile.id,
           email: existingProfile.email,
@@ -148,49 +120,51 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       let department = 'Management';
       
       if (invitationToken) {
-        // Verify invitation and determine role
-        const { data: invitation, error: inviteError } = await supabase
-          .from('handover_invitations')
-          .select(`
-            *,
-            handover:handovers (
-              outgoing_user_id,
-              incoming_user_id
-            )
-          `)
-          .eq('invitation_token', invitationToken)
-          .eq('email', email)
-          .eq('status', 'pending')
-          .single();
+        try {
+          // Verify invitation and determine role
+          const { data: invitation, error: inviteError } = await supabase
+            .from('handover_invitations')
+            .select(`
+              *,
+              handover:handovers (
+                outgoing_user_id,
+                incoming_user_id
+              )
+            `)
+            .eq('invitation_token', invitationToken)
+            .eq('email', email)
+            .eq('status', 'pending')
+            .single();
 
-        if (!inviteError && invitation) {
-          // Check if invitation is still valid
-          const expiresAt = new Date(invitation.expires_at);
-          const now = new Date();
-          
-          if (now <= expiresAt) {
-            // Determine role based on handover
-            // If handover already has outgoing_user_id, this user is incoming
-            // Otherwise is outgoing
-            if (invitation.handover.outgoing_user_id) {
-              role = 'incoming';
-              position = 'New Employee';
-              department = 'Various';
-            } else {
-              role = 'outgoing';
-              position = 'Departing Employee';
-              department = 'Various';
+          if (!inviteError && invitation) {
+            // Check if invitation is still valid
+            const expiresAt = new Date(invitation.expires_at);
+            const now = new Date();
+            
+            if (now <= expiresAt) {
+              // Determine role based on handover
+              if (invitation.handover.outgoing_user_id) {
+                role = 'incoming';
+                position = 'New Employee';
+                department = 'Various';
+              } else {
+                role = 'outgoing';
+                position = 'Departing Employee';
+                department = 'Various';
+              }
+
+              // Update invitation status
+              await supabase
+                .from('handover_invitations')
+                .update({ 
+                  status: 'accepted',
+                  accepted_at: new Date().toISOString()
+                })
+                .eq('id', invitation.id);
             }
-
-            // Update invitation status
-            await supabase
-              .from('handover_invitations')
-              .update({ 
-                status: 'accepted',
-                accepted_at: new Date().toISOString()
-              })
-              .eq('id', invitation.id);
           }
+        } catch (inviteError) {
+          console.warn('Error processing invitation:', inviteError);
         }
       } else {
         // Improved logic to determine role based on email
@@ -218,63 +192,72 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Create new organization if doesn't exist
       let organizationId = 'default-org-id';
-      const { data: org } = await supabase
-        .from('organizations')
-        .select('id')
-        .eq('name', 'TechCorp')
-        .maybeSingle();
-
-      if (!org) {
-        const { data: newOrg, error: orgError } = await supabase
+      try {
+        const { data: org } = await supabase
           .from('organizations')
-          .insert({
-            name: 'TechCorp',
-            domain: 'techcorp.it'
-          })
           .select('id')
-          .single();
+          .eq('name', 'TechCorp')
+          .maybeSingle();
 
-        if (!orgError && newOrg) {
-          organizationId = newOrg.id;
+        if (!org) {
+          const { data: newOrg, error: orgError } = await supabase
+            .from('organizations')
+            .insert({
+              name: 'TechCorp',
+              domain: 'techcorp.it'
+            })
+            .select('id')
+            .single();
+
+          if (!orgError && newOrg) {
+            organizationId = newOrg.id;
+          }
+        } else {
+          organizationId = org.id;
         }
-      } else {
-        organizationId = org.id;
+      } catch (orgError) {
+        console.warn('Error handling organization:', orgError);
       }
 
       // Create new profile
-      const { data: newProfile, error: createError } = await supabase
-        .from('profiles')
-        .insert({
-          id: clerkUserId,
-          email,
-          full_name: clerkUser?.fullName || email.split('@')[0].replace('.', ' '),
-          avatar_url: clerkUser?.imageUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
-          role,
-          organization_id: organizationId,
-          department,
-          position
-        })
-        .select()
-        .single();
+      try {
+        const { data: newProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert({
+            id: clerkUserId,
+            email,
+            full_name: clerkUser?.fullName || email.split('@')[0].replace('.', ' '),
+            avatar_url: clerkUser?.imageUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
+            role,
+            organization_id: organizationId,
+            department,
+            position
+          })
+          .select()
+          .single();
 
-      if (createError) {
+        if (createError) {
+          console.error('Error creating profile:', createError);
+          // Fallback to mock user if database creation fails
+          return createMockUser(clerkUserId, email);
+        }
+
+        console.log('Created new profile with role:', role, 'for email:', email);
+
+        return {
+          id: newProfile.id,
+          email: newProfile.email,
+          full_name: newProfile.full_name,
+          avatar_url: newProfile.avatar_url,
+          role: newProfile.role,
+          organization_id: newProfile.organization_id,
+          department: newProfile.department,
+          position: newProfile.position
+        };
+      } catch (createError) {
         console.error('Error creating profile:', createError);
-        // Fallback to mock user if database creation fails
         return createMockUser(clerkUserId, email);
       }
-
-      console.log('Created new profile with role:', role, 'for email:', email);
-
-      return {
-        id: newProfile.id,
-        email: newProfile.email,
-        full_name: newProfile.full_name,
-        avatar_url: newProfile.avatar_url,
-        role: newProfile.role,
-        organization_id: newProfile.organization_id,
-        department: newProfile.department,
-        position: newProfile.position
-      };
     } catch (error) {
       console.error('Error in loadUserProfile:', error);
       // Fallback to mock user on any error
