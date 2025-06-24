@@ -14,7 +14,9 @@ import {
   FileText, 
   Send,
   CheckCircle,
-  Clock
+  Clock,
+  Copy,
+  ExternalLink
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -25,9 +27,9 @@ interface Template {
   id: string;
   name: string;
   sections: any[];
-  createdAt: string;
-  createdBy: string;
-  usageCount?: number;
+  created_at: string;
+  created_by: string;
+  usage_count?: number;
 }
 
 interface CreateHandoverModalProps {
@@ -48,6 +50,7 @@ export const CreateHandoverModal: React.FC<CreateHandoverModalProps> = ({
   const [dueDate, setDueDate] = useState<Date>();
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [inviteUrl, setInviteUrl] = useState('');
 
   const validateForm = () => {
     if (!personName.trim()) {
@@ -89,6 +92,10 @@ export const CreateHandoverModal: React.FC<CreateHandoverModalProps> = ({
       // Simula creazione handover e invio email
       await new Promise(resolve => setTimeout(resolve, 2000));
 
+      const invitationToken = `inv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const baseUrl = window.location.origin;
+      const generatedInviteUrl = `${baseUrl}/invite?token=${invitationToken}`;
+
       const newHandover = {
         id: Math.random().toString(36).substr(2, 9),
         title: `${template.name} - ${personName}`,
@@ -100,17 +107,18 @@ export const CreateHandoverModal: React.FC<CreateHandoverModalProps> = ({
         completion: 0,
         dueDate: dueDate.toISOString(),
         createdAt: new Date().toISOString(),
-        inviteToken: Math.random().toString(36).substr(2, 16),
+        inviteToken: invitationToken,
         avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${personEmail}`
       };
 
+      setInviteUrl(generatedInviteUrl);
       onHandoverCreated(newHandover);
       setShowSuccess(true);
 
-      // Mostra successo per 2 secondi poi chiude
+      // Mostra successo per 5 secondi poi chiude
       setTimeout(() => {
         handleClose();
-      }, 2000);
+      }, 5000);
 
     } catch (error) {
       toast.error('Errore durante la creazione dell\'handover');
@@ -125,7 +133,17 @@ export const CreateHandoverModal: React.FC<CreateHandoverModalProps> = ({
     setDueDate(undefined);
     setIsLoading(false);
     setShowSuccess(false);
+    setInviteUrl('');
     onClose();
+  };
+
+  const handleCopyInviteUrl = () => {
+    navigator.clipboard.writeText(inviteUrl);
+    toast.success('Link di invito copiato negli appunti!');
+  };
+
+  const handleOpenInviteUrl = () => {
+    window.open(inviteUrl, '_blank');
   };
 
   const getTotalQuestions = (template: Template) => {
@@ -137,7 +155,7 @@ export const CreateHandoverModal: React.FC<CreateHandoverModalProps> = ({
   if (showSuccess) {
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg">
           <div className="text-center py-6">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle size={32} className="text-green-600" />
@@ -146,11 +164,45 @@ export const CreateHandoverModal: React.FC<CreateHandoverModalProps> = ({
               Handover Creato!
             </h3>
             <p className="text-gray-600 mb-4">
-              L'invito è stato inviato con successo a <strong>{personName}</strong>
+              L'invito è stato creato con successo per <strong>{personName}</strong>
             </p>
+            
+            {/* Link di invito */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-medium text-blue-900">Link di Invito</h4>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopyInviteUrl}
+                    className="gap-1"
+                  >
+                    <Copy size={14} />
+                    Copia
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleOpenInviteUrl}
+                    className="gap-1"
+                  >
+                    <ExternalLink size={14} />
+                    Apri
+                  </Button>
+                </div>
+              </div>
+              <div className="bg-white p-2 rounded border text-xs font-mono text-gray-700 break-all">
+                {inviteUrl}
+              </div>
+              <p className="text-xs text-blue-700 mt-2">
+                💡 In produzione, questo link verrebbe inviato automaticamente via email
+              </p>
+            </div>
+
             <div className="bg-green-50 border border-green-200 rounded-lg p-3">
               <p className="text-sm text-green-800">
-                📧 Email inviata a: {personEmail}
+                📧 Email di invito inviata a: <strong>{personEmail}</strong>
               </p>
             </div>
           </div>
@@ -277,11 +329,11 @@ export const CreateHandoverModal: React.FC<CreateHandoverModalProps> = ({
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-exitloop-purple rounded-full"></div>
-                  {personName || 'La persona'} riceverà un'email con il link di accesso
+                  Verrà generato un link di invito per {personName || 'la persona'}
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-exitloop-purple rounded-full"></div>
-                  Potrà accedere e compilare il questionario fino al {dueDate ? format(dueDate, "dd/MM/yyyy") : '[data selezionata]'}
+                  La persona potrà registrarsi e accedere fino al {dueDate ? format(dueDate, "dd/MM/yyyy") : '[data selezionata]'}
                 </div>
               </div>
             </CardContent>
@@ -313,7 +365,7 @@ export const CreateHandoverModal: React.FC<CreateHandoverModalProps> = ({
               ) : (
                 <>
                   <Send size={16} />
-                  Crea Handover e Invia Invito
+                  Crea Handover e Genera Invito
                 </>
               )}
             </Button>

@@ -7,6 +7,7 @@ import { ClerkProvider, SignedIn, SignedOut, RedirectToSignIn } from '@clerk/cle
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
+import Invite from "./pages/Invite";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,10 @@ const AppRoutes = () => {
             <Index />
           </SignedOut>
         } 
+      />
+      <Route 
+        path="/invite" 
+        element={<Invite />}
       />
       <Route 
         path="/dashboard" 

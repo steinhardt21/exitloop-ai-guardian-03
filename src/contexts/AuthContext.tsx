@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useUser, useAuth as useClerkAuth } from '@clerk/clerk-react';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 
 interface User {
@@ -36,6 +37,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const { user: clerkUser, isLoaded } = useUser();
   const { signOut } = useClerkAuth();
+  const [searchParams] = useSearchParams();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -63,19 +65,68 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       // Se non esiste, crea un nuovo profilo
-      // Determina il ruolo basato sull'email per demo
+      // Controlla se c'è un invitation token nell'URL
+      const invitationToken = searchParams.get('token');
       let role: 'admin' | 'outgoing' | 'incoming' = 'admin';
       let position = 'Administrator';
       let department = 'HR';
       
-      if (email.includes('outgoing') || email.includes('uscente')) {
-        role = 'outgoing';
-        position = 'CTO';
-        department = 'Technology';
-      } else if (email.includes('incoming') || email.includes('entrante')) {
-        role = 'incoming';
-        position = 'New CTO';
-        department = 'Technology';
+      if (invitationToken) {
+        // Verifica l'invito e determina il ruolo
+        const { data: invitation, error: inviteError } = await supabase
+          .from('handover_invitations')
+          .select(`
+            *,
+            handover:handovers (
+              outgoing_user_id,
+              incoming_user_id
+            )
+          `)
+          .eq('invitation_token', invitationToken)
+          .eq('email', email)
+          .eq('status', 'pending')
+          .single();
+
+        if (!inviteError && invitation) {
+          // Controlla se l'invito è ancora valido
+          const expiresAt = new Date(invitation.expires_at);
+          const now = new Date();
+          
+          if (now <= expiresAt) {
+            // Determina il ruolo basato sull'handover
+            // Se l'handover ha già un outgoing_user_id, questo utente è incoming
+            // Altrimenti è outgoing
+            if (invitation.handover.outgoing_user_id) {
+              role = 'incoming';
+              position = 'New Employee';
+              department = 'Various';
+            } else {
+              role = 'outgoing';
+              position = 'Departing Employee';
+              department = 'Various';
+            }
+
+            // Aggiorna lo stato dell'invito
+            await supabase
+              .from('handover_invitations')
+              .update({ 
+                status: 'accepted',
+                accepted_at: new Date().toISOString()
+              })
+              .eq('id', invitation.id);
+          }
+        }
+      } else {
+        // Determina il ruolo basato sull'email per demo (fallback)
+        if (email.includes('outgoing') || email.includes('uscente')) {
+          role = 'outgoing';
+          position = 'CTO';
+          department = 'Technology';
+        } else if (email.includes('incoming') || email.includes('entrante')) {
+          role = 'incoming';
+          position = 'New CTO';
+          department = 'Technology';
+        }
       }
 
       // Crea una nuova organizzazione se non esiste
@@ -160,7 +211,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     initializeUser();
-  }, [clerkUser, isLoaded]);
+  }, [clerkUser, isLoaded, searchParams]);
 
   const logout = async () => {
     await signOut();
