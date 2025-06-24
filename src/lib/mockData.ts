@@ -29,6 +29,16 @@ export const mockUsers = [
     organization_id: 'org-1',
     department: 'Technology',
     position: 'New CTO'
+  },
+  {
+    id: 'incoming-2',
+    email: 'luca.verdi@techcorp.it',
+    full_name: 'Luca Verdi',
+    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=luca',
+    role: 'incoming' as const,
+    organization_id: 'org-1',
+    department: 'Sales',
+    position: 'New Sales Manager'
   }
 ];
 

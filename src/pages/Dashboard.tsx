@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
 import { OutgoingSidebar } from '@/components/dashboard/OutgoingSidebar';
+import { IncomingSidebar } from '@/components/dashboard/IncomingSidebar';
 import { DashboardContent } from '@/components/dashboard/DashboardContent';
 import { TemplateList } from '@/components/templates/TemplateList';
 import { CreateTemplateModal } from '@/components/templates/CreateTemplateModal';
@@ -154,7 +155,16 @@ const Dashboard: React.FC = () => {
       );
     }
     
-    // Default per admin e incoming
+    if (user?.role === 'incoming') {
+      return (
+        <IncomingSidebar 
+          onNavigate={handleNavigation}
+          currentPage={currentPage}
+        />
+      );
+    }
+    
+    // Default per admin
     return (
       <DashboardSidebar 
         onNavigate={handleNavigation}
@@ -190,7 +200,45 @@ const Dashboard: React.FC = () => {
       }
     }
 
-    // Contenuti per admin e incoming (esistenti)
+    // Contenuti specifici per dipendente entrante
+    if (user?.role === 'incoming') {
+      switch (currentPage) {
+        case 'handovers':
+          return <DashboardContent onNavigate={handleNavigation} />;
+        case 'chat':
+          return (
+            <div className="flex-1 bg-gray-50 overflow-auto p-8">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Chat AI</h1>
+              <p className="text-gray-600">Cronologia delle tue conversazioni con l'AI Assistant</p>
+            </div>
+          );
+        case 'knowledge':
+          return (
+            <div className="flex-1 bg-gray-50 overflow-auto p-8">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Knowledge Hub</h1>
+              <p className="text-gray-600">Le tue note, bookmark e risorse salvate</p>
+            </div>
+          );
+        case 'quick-access':
+          return (
+            <div className="flex-1 bg-gray-50 overflow-auto p-8">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Quick Access</h1>
+              <p className="text-gray-600">Contatti, tool e task urgenti sempre a portata di mano</p>
+            </div>
+          );
+        case 'profile':
+          return (
+            <div className="flex-1 bg-gray-50 overflow-auto p-8">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Profilo</h1>
+              <p className="text-gray-600">Gestisci le tue informazioni personali</p>
+            </div>
+          );
+        default:
+          return <DashboardContent onNavigate={handleNavigation} />;
+      }
+    }
+
+    // Contenuti per admin (esistenti)
     switch (currentPage) {
       case 'templates':
         return (

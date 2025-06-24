@@ -2,6 +2,7 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { AdminDashboard } from './AdminDashboard';
 import { OutgoingDashboard } from './OutgoingDashboard';
+import { IncomingDashboard } from './IncomingDashboard';
 import { UserDashboard } from './UserDashboard';
 
 interface DashboardContentProps {
@@ -21,9 +22,9 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({ onNavigate }
   }
   
   if (user?.role === 'incoming') {
-    return <UserDashboard />;
+    return <IncomingDashboard />;
   }
 
-  // Default fallback
-  return <AdminDashboard />;
+  // Default fallback per compatibilità
+  return <UserDashboard />;
 };
