@@ -12,22 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Users,
-  FileText,
-  Template,
-  Plus,
-  Eye,
-  CheckCircle,
-  Bot,
-  Mail,
-  Edit,
-  UserPlus,
-  Search,
-  Filter,
-  Download,
-  MoreHorizontal
-} from 'lucide-react';
+import { Users, FileText, BookTemplate as Template, Plus, Eye, CheckCircle, Bot, Mail, Edit, UserPlus, Search, Filter, Download, MoreHorizontal } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
