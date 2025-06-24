@@ -21,11 +21,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { CreateTemplateModal } from '@/components/templates/CreateTemplateModal';
 import { TemplateList } from '@/components/templates/TemplateList';
+import { HandoverDetailsModal } from '@/components/handovers/HandoverDetailsModal';
 import { toast } from '@/components/ui/sonner';
 
 export const AdminDashboard: React.FC = () => {
   const [isCreateTemplateOpen, setIsCreateTemplateOpen] = useState(false);
   const [showTemplateList, setShowTemplateList] = useState(false);
+  const [selectedHandover, setSelectedHandover] = useState<any>(null);
+  const [isHandoverDetailsOpen, setIsHandoverDetailsOpen] = useState(false);
+  
   const [templates, setTemplates] = useState([
     {
       id: '1',
@@ -56,40 +60,60 @@ export const AdminDashboard: React.FC = () => {
       id: 1,
       title: "Passaggio CTO - Marco Rossi",
       employee: "Marco Rossi",
+      email: "marco.rossi@azienda.com",
       status: "in-progress",
       completion: 75,
+      dueDate: "2024-02-15T00:00:00Z",
+      createdAt: "2024-01-15T10:00:00Z",
+      templateName: "CTO Handover",
       avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=marco"
     },
     {
       id: 2,
       title: "Handover Marketing Manager",
       employee: "Laura Bianchi",
+      email: "laura.bianchi@azienda.com",
       status: "completed",
       completion: 100,
+      dueDate: "2024-01-30T00:00:00Z",
+      createdAt: "2024-01-10T14:30:00Z",
+      templateName: "Marketing Manager",
       avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=laura"
     },
     {
       id: 3,
       title: "Sviluppatore Senior Frontend",
       employee: "Andrea Verdi",
+      email: "andrea.verdi@azienda.com",
       status: "pending",
       completion: 45,
+      dueDate: "2024-02-20T00:00:00Z",
+      createdAt: "2024-01-20T09:15:00Z",
+      templateName: "Developer Senior",
       avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=andrea"
     },
     {
       id: 4,
       title: "Responsabile Vendite Nord",
       employee: "Giulia Neri",
+      email: "giulia.neri@azienda.com",
       status: "in-progress",
       completion: 60,
+      dueDate: "2024-02-10T00:00:00Z",
+      createdAt: "2024-01-18T11:20:00Z",
+      templateName: "Sales Manager",
       avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=giulia"
     },
     {
       id: 5,
       title: "Project Manager Digital",
       employee: "Luca Ferrari",
+      email: "luca.ferrari@azienda.com",
       status: "completed",
       completion: 100,
+      dueDate: "2024-01-25T00:00:00Z",
+      createdAt: "2024-01-05T16:45:00Z",
+      templateName: "Project Manager",
       avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=luca"
     }
   ]);
@@ -192,6 +216,19 @@ export const AdminDashboard: React.FC = () => {
     toast.success(`Invito inviato a ${newHandover.employee}`, {
       description: `L'handover "${newHandover.title}" è stato creato e l'invito è stato inviato via email.`
     });
+  };
+
+  const handleViewHandoverDetails = (handover: any) => {
+    setSelectedHandover(handover);
+    setIsHandoverDetailsOpen(true);
+  };
+
+  const handleAIAnalysis = (handover: any) => {
+    toast.info(`Avvio analisi AI per: ${handover.title}`, {
+      description: "L'analisi AI valuterà la qualità delle risposte fornite."
+    });
+    // In futuro questo aprirà direttamente il tab di analisi AI
+    handleViewHandoverDetails(handover);
   };
 
   const getStatusBadge = (status: string) => {
@@ -418,17 +455,23 @@ export const AdminDashboard: React.FC = () => {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="sm" className="gap-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="gap-1"
+                          onClick={() => handleViewHandoverDetails(handover)}
+                        >
                           <Eye size={14} />
                           Dettagli
                         </Button>
-                        <Button variant="outline" size="sm" className="gap-1">
-                          <CheckCircle size={14} />
-                          Valuta
-                        </Button>
-                        <Button variant="outline" size="sm" className="gap-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="gap-1"
+                          onClick={() => handleAIAnalysis(handover)}
+                        >
                           <Bot size={14} />
-                          Assistant
+                          Analisi AI
                         </Button>
                       </div>
                     </TableCell>
@@ -536,6 +579,12 @@ export const AdminDashboard: React.FC = () => {
           isOpen={isCreateTemplateOpen}
           onClose={() => setIsCreateTemplateOpen(false)}
           onSave={handleCreateTemplate}
+        />
+
+        <HandoverDetailsModal
+          isOpen={isHandoverDetailsOpen}
+          onClose={() => setIsHandoverDetailsOpen(false)}
+          handover={selectedHandover}
         />
       </div>
     </div>
