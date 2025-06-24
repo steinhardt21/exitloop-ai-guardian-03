@@ -23,7 +23,7 @@ export const Hero = () => {
                   className="bg-exitloop-purple hover:bg-exitloop-purple/90"
                   onClick={() => setIsAuthModalOpen(true)}
                 >
-                  Registrati
+                  Accedi
                 </Button>
               </div>
             </div>
