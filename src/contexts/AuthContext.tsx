@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
+import { getMockUserByEmail } from '@/lib/mockData';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface User {
@@ -102,6 +103,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
+      // Per demo: controlla se è un utente mock
+      const mockUser = getMockUserByEmail(email);
+      if (mockUser && password === 'demo123') {
+        setUser(mockUser);
+        localStorage.setItem('exitloop_user', JSON.stringify(mockUser));
+        setIsLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -160,10 +170,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       setUser(null);
+      localStorage.removeItem('exitloop_user');
     } catch (error) {
       console.error('Error during logout:', error);
     }
   };
+
+  // Check for existing user on mount (per demo)
+  useEffect(() => {
+    const savedUser = localStorage.getItem('exitloop_user');
+    if (savedUser && !user) {
+      try {
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser);
+      } catch (error) {
+        localStorage.removeItem('exitloop_user');
+      }
+    }
+  }, [user]);
 
   const value = {
     user,

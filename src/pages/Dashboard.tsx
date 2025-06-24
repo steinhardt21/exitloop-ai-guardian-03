@@ -1,15 +1,21 @@
 import React, { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
+import { OutgoingSidebar } from '@/components/dashboard/OutgoingSidebar';
 import { DashboardContent } from '@/components/dashboard/DashboardContent';
 import { TemplateList } from '@/components/templates/TemplateList';
 import { CreateTemplateModal } from '@/components/templates/CreateTemplateModal';
+import { HandoverCompletionView } from '@/components/handovers/HandoverCompletionView';
+import { OutgoingAchievements } from '@/components/dashboard/OutgoingAchievements';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 
 const Dashboard: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState('home');
+  const { user } = useAuth();
+  const [currentPage, setCurrentPage] = useState('dashboard');
+  const [selectedHandoverId, setSelectedHandoverId] = useState<string | null>(null);
   const [isCreateTemplateOpen, setIsCreateTemplateOpen] = useState(false);
   const [templates, setTemplates] = useState([
     {
@@ -32,9 +38,9 @@ const Dashboard: React.FC = () => {
           ]
         }
       ],
-      createdAt: '2024-01-15T10:00:00Z',
-      createdBy: 'Admin',
-      usageCount: 5
+      created_at: '2024-01-15T10:00:00Z',
+      created_by: 'Admin',
+      usage_count: 5
     },
     {
       id: '2',
@@ -55,9 +61,9 @@ const Dashboard: React.FC = () => {
           ]
         }
       ],
-      createdAt: '2024-01-10T14:30:00Z',
-      createdBy: 'Admin',
-      usageCount: 3
+      created_at: '2024-01-10T14:30:00Z',
+      created_by: 'Admin',
+      usage_count: 3
     },
     {
       id: '3',
@@ -79,16 +85,23 @@ const Dashboard: React.FC = () => {
           ]
         }
       ],
-      createdAt: '2024-01-08T09:15:00Z',
-      createdBy: 'Admin',
-      usageCount: 8
+      created_at: '2024-01-08T09:15:00Z',
+      created_by: 'Admin',
+      usage_count: 8
     }
   ]);
+
+  const handleNavigation = (page: string, handoverId?: string) => {
+    setCurrentPage(page);
+    if (handoverId) {
+      setSelectedHandoverId(handoverId);
+    }
+  };
 
   const handleCreateTemplate = (template: any) => {
     const newTemplate = {
       ...template,
-      usageCount: 0
+      usage_count: 0
     };
     setTemplates([...templates, newTemplate]);
     toast.success(`Template "${template.name}" creato con successo!`);
@@ -111,8 +124,8 @@ const Dashboard: React.FC = () => {
       ...template,
       id: Math.random().toString(36).substr(2, 9),
       name: `${template.name} (Copia)`,
-      createdAt: new Date().toISOString(),
-      usageCount: 0
+      created_at: new Date().toISOString(),
+      usage_count: 0
     };
     setTemplates([...templates, duplicatedTemplate]);
     toast.success(`Template "${template.name}" duplicato con successo!`);
@@ -130,7 +143,54 @@ const Dashboard: React.FC = () => {
     });
   };
 
+  // Determina quale sidebar usare in base al ruolo
+  const renderSidebar = () => {
+    if (user?.role === 'outgoing') {
+      return (
+        <OutgoingSidebar 
+          onNavigate={handleNavigation}
+          currentPage={currentPage}
+        />
+      );
+    }
+    
+    // Default per admin e incoming
+    return (
+      <DashboardSidebar 
+        onNavigate={handleNavigation}
+        currentPage={currentPage}
+      />
+    );
+  };
+
   const renderContent = () => {
+    // Contenuti specifici per dipendente uscente
+    if (user?.role === 'outgoing') {
+      switch (currentPage) {
+        case 'handover-completion':
+          return (
+            <HandoverCompletionView
+              handoverId={selectedHandoverId || '1'}
+              onNavigate={handleNavigation}
+            />
+          );
+        case 'achievements':
+          return <OutgoingAchievements onNavigate={handleNavigation} />;
+        case 'handovers':
+          return <DashboardContent onNavigate={handleNavigation} />;
+        case 'profile':
+          return (
+            <div className="flex-1 bg-gray-50 overflow-auto p-8">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Profilo</h1>
+              <p className="text-gray-600">Gestisci le tue informazioni personali</p>
+            </div>
+          );
+        default:
+          return <DashboardContent onNavigate={handleNavigation} />;
+      }
+    }
+
+    // Contenuti per admin e incoming (esistenti)
     switch (currentPage) {
       case 'templates':
         return (
@@ -185,17 +245,14 @@ const Dashboard: React.FC = () => {
         );
       
       default:
-        return <DashboardContent />;
+        return <DashboardContent onNavigate={handleNavigation} />;
     }
   };
 
   return (
     <TooltipProvider>
       <div className="flex h-screen bg-gray-50">
-        <DashboardSidebar 
-          onNavigate={setCurrentPage}
-          currentPage={currentPage}
-        />
+        {renderSidebar()}
         {renderContent()}
         
         <CreateTemplateModal
