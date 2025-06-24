@@ -51,24 +51,7 @@ export const AdminDashboard: React.FC = () => {
     }
   ]);
 
-  // Mock data per la dashboard
-  const stats = {
-    users: {
-      total: 127,
-      admin: 3,
-      outgoing: 15,
-      incoming: 109
-    },
-    handovers: {
-      total: 42,
-      inProgress: 18,
-      completed: 20,
-      pending: 4
-    },
-    templates: templates.length
-  };
-
-  const handovers = [
+  const [handovers, setHandovers] = useState([
     {
       id: 1,
       title: "Passaggio CTO - Marco Rossi",
@@ -109,7 +92,24 @@ export const AdminDashboard: React.FC = () => {
       completion: 100,
       avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=luca"
     }
-  ];
+  ]);
+
+  // Mock data per la dashboard
+  const stats = {
+    users: {
+      total: 127,
+      admin: 3,
+      outgoing: 15,
+      incoming: 109
+    },
+    handovers: {
+      total: handovers.length,
+      inProgress: handovers.filter(h => h.status === 'in-progress').length,
+      completed: handovers.filter(h => h.status === 'completed').length,
+      pending: handovers.filter(h => h.status === 'pending').length
+    },
+    templates: templates.length
+  };
 
   const users = [
     {
@@ -187,6 +187,13 @@ export const AdminDashboard: React.FC = () => {
     toast.success(`Template "${template?.name}" eliminato con successo!`);
   };
 
+  const handleHandoverCreated = (newHandover: any) => {
+    setHandovers([newHandover, ...handovers]);
+    toast.success(`Invito inviato a ${newHandover.employee}`, {
+      description: `L'handover "${newHandover.title}" è stato creato e l'invito è stato inviato via email.`
+    });
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'in-progress':
@@ -262,6 +269,7 @@ export const AdminDashboard: React.FC = () => {
             onEdit={handleEditTemplate}
             onDuplicate={handleDuplicateTemplate}
             onDelete={handleDeleteTemplate}
+            onHandoverCreated={handleHandoverCreated}
           />
 
           <CreateTemplateModal
