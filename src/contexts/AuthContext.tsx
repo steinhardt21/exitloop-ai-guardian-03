@@ -140,8 +140,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             email,
             full_name: name,
             avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
-            role: 'admin', // Per ora tutti gli utenti sono admin
-            organization_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' // TechCorp Italia
+            role: 'admin'
           });
 
         if (profileError) throw profileError;
