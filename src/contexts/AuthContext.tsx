@@ -47,7 +47,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .from('profiles')
         .select('*')
         .eq('id', clerkUserId)
-        .single();
+        .maybeSingle();
 
       if (existingProfile && !fetchError) {
         return {
@@ -79,12 +79,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       // Crea una nuova organizzazione se non esiste
-      let organizationId = 'default-org';
+      let organizationId = 'default-org-id';
       const { data: org } = await supabase
         .from('organizations')
         .select('id')
         .eq('name', 'TechCorp')
-        .single();
+        .maybeSingle();
 
       if (!org) {
         const { data: newOrg, error: orgError } = await supabase
