@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
-import { getMockUserByEmail } from '@/lib/mockData';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface User {
@@ -72,46 +71,79 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Inizializza l'autenticazione
   useEffect(() => {
-    // Controlla se c'è già una sessione attiva
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        loadUserProfile(session.user).then(profile => {
-          setUser(profile);
+    let mounted = true;
+
+    const initializeAuth = async () => {
+      try {
+        // Controlla se c'è già una sessione attiva
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          if (mounted) {
+            setUser(null);
+            setIsLoading(false);
+          }
+          return;
+        }
+
+        if (session?.user && mounted) {
+          const profile = await loadUserProfile(session.user);
+          if (mounted) {
+            setUser(profile);
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        if (mounted) {
+          setUser(null);
+        }
+      } finally {
+        if (mounted) {
           setIsLoading(false);
-        });
-      } else {
-        setIsLoading(false);
+        }
       }
-    });
+    };
+
+    initializeAuth();
 
     // Ascolta i cambiamenti di autenticazione
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (session?.user) {
-          const profile = await loadUserProfile(session.user);
-          setUser(profile);
-        } else {
+        console.log('Auth state changed:', event, session?.user?.email);
+        
+        if (!mounted) return;
+
+        if (event === 'SIGNED_OUT' || !session?.user) {
           setUser(null);
+          setIsLoading(false);
+          return;
         }
-        setIsLoading(false);
+
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          if (session?.user) {
+            const profile = await loadUserProfile(session.user);
+            if (mounted) {
+              setUser(profile);
+            }
+          }
+        }
+        
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Per demo: controlla se è un utente mock
-      const mockUser = getMockUserByEmail(email);
-      if (mockUser && password === 'demo123') {
-        setUser(mockUser);
-        localStorage.setItem('exitloop_user', JSON.stringify(mockUser));
-        setIsLoading(false);
-        return;
-      }
-
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -133,6 +165,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (name: string, email: string, password: string) => {
     setIsLoading(true);
     try {
+      // Prima crea un'organizzazione di default se non esiste
+      let organizationId: string;
+      
+      const { data: existingOrg, error: orgCheckError } = await supabase
+        .from('organizations')
+        .select('id')
+        .eq('domain', email.split('@')[1])
+        .single();
+
+      if (orgCheckError && orgCheckError.code !== 'PGRST116') {
+        throw orgCheckError;
+      }
+
+      if (existingOrg) {
+        organizationId = existingOrg.id;
+      } else {
+        // Crea una nuova organizzazione
+        const { data: newOrg, error: orgError } = await supabase
+          .from('organizations')
+          .insert({
+            name: email.split('@')[1].split('.')[0] + ' Organization',
+            domain: email.split('@')[1]
+          })
+          .select('id')
+          .single();
+
+        if (orgError) throw orgError;
+        organizationId = newOrg.id;
+      }
+
       // Registra l'utente in Supabase Auth
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -150,7 +212,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             email,
             full_name: name,
             avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
-            role: 'admin'
+            role: 'admin',
+            organization_id: organizationId
           });
 
         if (profileError) throw profileError;
@@ -170,24 +233,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       setUser(null);
-      localStorage.removeItem('exitloop_user');
     } catch (error) {
       console.error('Error during logout:', error);
+      // Forza il logout locale anche se c'è un errore
+      setUser(null);
     }
   };
-
-  // Check for existing user on mount (per demo)
-  useEffect(() => {
-    const savedUser = localStorage.getItem('exitloop_user');
-    if (savedUser && !user) {
-      try {
-        const parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser);
-      } catch (error) {
-        localStorage.removeItem('exitloop_user');
-      }
-    }
-  }, [user]);
 
   const value = {
     user,

@@ -11,86 +11,20 @@ import { OutgoingAchievements } from '@/components/dashboard/OutgoingAchievement
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { toast } from '@/components/ui/sonner';
+import { useTemplates } from '@/hooks/useDatabase';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [selectedHandoverId, setSelectedHandoverId] = useState<string | null>(null);
   const [isCreateTemplateOpen, setIsCreateTemplateOpen] = useState(false);
-  const [templates, setTemplates] = useState([
-    {
-      id: '1',
-      name: 'CTO Handover',
-      sections: [
-        { 
-          id: 'sec1',
-          title: 'Responsabilità Tecniche', 
-          questions: [
-            { id: 'q1', text: 'Quali sono le principali responsabilità tecniche?' },
-            { id: 'q2', text: 'Chi sono i referenti tecnici chiave?' }
-          ]
-        },
-        { 
-          id: 'sec2',
-          title: 'Progetti in Corso', 
-          questions: [
-            { id: 'q3', text: 'Quali progetti sono attualmente in sviluppo?' }
-          ]
-        }
-      ],
-      created_at: '2024-01-15T10:00:00Z',
-      created_by: 'Admin',
-      usage_count: 5
-    },
-    {
-      id: '2',
-      name: 'Marketing Manager',
-      sections: [
-        { 
-          id: 'sec3',
-          title: 'Campagne Attive', 
-          questions: [
-            { id: 'q4', text: 'Quali campagne sono attualmente attive?' }
-          ]
-        },
-        { 
-          id: 'sec4',
-          title: 'Tool e Processi', 
-          questions: [
-            { id: 'q5', text: 'Quali tool utilizzi quotidianamente?' }
-          ]
-        }
-      ],
-      created_at: '2024-01-10T14:30:00Z',
-      created_by: 'Admin',
-      usage_count: 3
-    },
-    {
-      id: '3',
-      name: 'Developer Senior',
-      sections: [
-        { 
-          id: 'sec5',
-          title: 'Codice e Repository', 
-          questions: [
-            { id: 'q6', text: 'Quali sono i repository principali?' },
-            { id: 'q7', text: 'Dove si trova la documentazione tecnica?' }
-          ]
-        },
-        { 
-          id: 'sec6',
-          title: 'Deployment', 
-          questions: [
-            { id: 'q8', text: 'Come funziona il processo di deploy?' }
-          ]
-        }
-      ],
-      created_at: '2024-01-08T09:15:00Z',
-      created_by: 'Admin',
-      usage_count: 8
-    }
-  ]);
+  
+  const { 
+    templates, 
+    createTemplate, 
+    updateTemplate, 
+    deleteTemplate 
+  } = useTemplates();
 
   const handleNavigation = (page: string, handoverId?: string) => {
     setCurrentPage(page);
@@ -99,49 +33,45 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleCreateTemplate = (template: any) => {
-    const newTemplate = {
-      ...template,
-      usage_count: 0
-    };
-    setTemplates([...templates, newTemplate]);
-    toast.success(`Template "${template.name}" creato con successo!`);
+  const handleCreateTemplate = async (template: any) => {
+    try {
+      await createTemplate(template);
+    } catch (error) {
+      console.error('Error creating template:', error);
+    }
   };
 
-  const handleEditTemplate = (template: any) => {
-    // Questa funzione ora viene gestita direttamente dal TemplateList
-    // tramite il modal di modifica
+  const handleUpdateTemplate = async (updatedTemplate: any) => {
+    try {
+      await updateTemplate(updatedTemplate.id, updatedTemplate);
+    } catch (error) {
+      console.error('Error updating template:', error);
+    }
   };
 
-  const handleUpdateTemplate = (updatedTemplate: any) => {
-    setTemplates(templates.map(t => 
-      t.id === updatedTemplate.id ? updatedTemplate : t
-    ));
-    toast.success(`Template "${updatedTemplate.name}" modificato con successo!`);
+  const handleDuplicateTemplate = async (template: any) => {
+    try {
+      const duplicatedTemplate = {
+        ...template,
+        name: `${template.name} (Copia)`,
+        sections: template.sections
+      };
+      await createTemplate(duplicatedTemplate);
+    } catch (error) {
+      console.error('Error duplicating template:', error);
+    }
   };
 
-  const handleDuplicateTemplate = (template: any) => {
-    const duplicatedTemplate = {
-      ...template,
-      id: Math.random().toString(36).substr(2, 9),
-      name: `${template.name} (Copia)`,
-      created_at: new Date().toISOString(),
-      usage_count: 0
-    };
-    setTemplates([...templates, duplicatedTemplate]);
-    toast.success(`Template "${template.name}" duplicato con successo!`);
-  };
-
-  const handleDeleteTemplate = (templateId: string) => {
-    const template = templates.find(t => t.id === templateId);
-    setTemplates(templates.filter(t => t.id !== templateId));
-    toast.success(`Template "${template?.name}" eliminato con successo!`);
+  const handleDeleteTemplate = async (templateId: string) => {
+    try {
+      await deleteTemplate(templateId);
+    } catch (error) {
+      console.error('Error deleting template:', error);
+    }
   };
 
   const handleHandoverCreated = (handover: any) => {
-    toast.success(`Invito inviato a ${handover.employee}`, {
-      description: `L'handover "${handover.title}" è stato creato e l'invito è stato inviato via email.`
-    });
+    console.log('Handover created:', handover);
   };
 
   // Determina quale sidebar usare in base al ruolo
@@ -265,7 +195,7 @@ const Dashboard: React.FC = () => {
 
               <TemplateList
                 templates={templates}
-                onEdit={handleEditTemplate}
+                onEdit={() => {}}
                 onDuplicate={handleDuplicateTemplate}
                 onDelete={handleDeleteTemplate}
                 onHandoverCreated={handleHandoverCreated}
