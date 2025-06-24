@@ -25,11 +25,14 @@ import { toast } from '@/components/ui/sonner';
 interface Question {
   id: string;
   text: string;
+  type?: string;
+  required?: boolean;
 }
 
 interface Section {
   id: string;
   title: string;
+  description?: string;
   questions: Question[];
   isOpen: boolean;
 }
@@ -88,7 +91,8 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
     const newSection: Section = {
       id: generateId(),
       title: '',
-      questions: [{ id: generateId(), text: '' }],
+      description: '',
+      questions: [{ id: generateId(), text: '', type: 'textarea', required: true }],
       isOpen: true
     };
     setSections([...sections, newSection]);
@@ -133,7 +137,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
       section.id === sectionId 
         ? { 
             ...section, 
-            questions: [...section.questions, { id: generateId(), text: '' }]
+            questions: [...section.questions, { id: generateId(), text: '', type: 'textarea', required: true }]
           }
         : section
     ));
@@ -198,12 +202,21 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
       const templateData = {
         id: template?.id || generateId(),
         name: templateName,
-        sections: sections.filter(section => 
-          section.title.trim() && section.questions.some(q => q.text.trim())
-        ).map(section => ({
-          ...section,
-          questions: section.questions.filter(q => q.text.trim())
-        })),
+        sections: sections
+          .filter(section => section.title.trim() && section.questions.some(q => q.text.trim()))
+          .map((section, sectionIdx) => ({
+            ...section,
+            description: section.description || '', // Default empty description
+            order_index: sectionIdx + 1,
+            questions: section.questions
+              .filter(q => q.text.trim())
+              .map((q, qIdx) => ({
+                text: q.text,
+                type: q.type || 'textarea', // Default type
+                required: q.required !== false, // Default required true
+                order_index: qIdx + 1
+              }))
+          })),
         createdAt: template?.createdAt || new Date().toISOString(),
         createdBy: template?.createdBy || 'Admin',
         usageCount: template?.usageCount || 0

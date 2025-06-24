@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +24,8 @@ import { CreateHandoverModal } from '@/components/handovers/CreateHandoverModal'
 import { CreateTemplateModal } from '@/components/templates/CreateTemplateModal';
 import { useHandovers } from '@/hooks/useDatabase';
 import { toast } from '@/components/ui/sonner';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 interface Template {
   id: string;
@@ -58,6 +60,7 @@ export const TemplateList: React.FC<TemplateListProps> = ({
   const [isCreateHandoverOpen, setIsCreateHandoverOpen] = useState(false);
   const [isCreateTemplateOpen, setIsCreateTemplateOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
+  const [templateDescription, setTemplateDescription] = useState('');
   
   const { createHandover } = useHandovers();
 
@@ -288,7 +291,15 @@ export const TemplateList: React.FC<TemplateListProps> = ({
           setIsCreateTemplateOpen(false);
           setEditingTemplate(null);
         }}
-        template={editingTemplate}
+        template={
+          editingTemplate
+            ? {
+                ...editingTemplate,
+                createdAt: editingTemplate.created_at,
+                createdBy: editingTemplate.created_by,
+              }
+            : null
+        }
         onSave={editingTemplate ? handleTemplateUpdated : handleTemplateCreated}
       />
     </>
