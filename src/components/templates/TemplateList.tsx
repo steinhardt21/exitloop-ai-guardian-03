@@ -26,10 +26,11 @@ import { CreateTemplateModal } from '@/components/templates/CreateTemplateModal'
 interface Template {
   id: string;
   name: string;
+  description?: string;
   sections: any[];
-  createdAt: string;
-  createdBy: string;
-  usageCount?: number;
+  created_at: string;
+  created_by: string;
+  usage_count?: number;
 }
 
 interface TemplateListProps {
@@ -194,7 +195,7 @@ export const TemplateList: React.FC<TemplateListProps> = ({
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Utilizzi:</span>
                   <Badge variant="outline">
-                    {template.usageCount || 0} volte
+                    {template.usage_count || 0} volte
                   </Badge>
                 </div>
                 
@@ -202,13 +203,13 @@ export const TemplateList: React.FC<TemplateListProps> = ({
                   <span className="text-muted-foreground">Creato:</span>
                   <div className="flex items-center gap-1">
                     <Calendar size={14} />
-                    {formatDate(template.createdAt)}
+                    {formatDate(template.created_at)}
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Autore:</span>
-                  <span className="font-medium">{template.createdBy}</span>
+                  <span className="font-medium">{template.created_by}</span>
                 </div>
 
                 <div className="pt-3 border-t space-y-2">

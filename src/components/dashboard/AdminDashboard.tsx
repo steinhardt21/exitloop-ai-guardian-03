@@ -23,6 +23,7 @@ import { CreateTemplateModal } from '@/components/templates/CreateTemplateModal'
 import { TemplateList } from '@/components/templates/TemplateList';
 import { HandoverDetailsModal } from '@/components/handovers/HandoverDetailsModal';
 import { toast } from '@/components/ui/sonner';
+import { useTemplates, useHandovers } from '@/hooks/useDatabase';
 
 export const AdminDashboard: React.FC = () => {
   const [isCreateTemplateOpen, setIsCreateTemplateOpen] = useState(false);
@@ -30,111 +31,10 @@ export const AdminDashboard: React.FC = () => {
   const [selectedHandover, setSelectedHandover] = useState<any>(null);
   const [isHandoverDetailsOpen, setIsHandoverDetailsOpen] = useState(false);
   
-  const [templates, setTemplates] = useState([
-    {
-      id: '1',
-      name: 'CTO Handover',
-      sections: [
-        { title: 'Responsabilità Tecniche', questions: ['Quali sono le principali responsabilità tecniche?', 'Chi sono i referenti tecnici chiave?'] },
-        { title: 'Progetti in Corso', questions: ['Quali progetti sono attualmente in sviluppo?'] }
-      ],
-      createdAt: '2024-01-15T10:00:00Z',
-      createdBy: 'Admin',
-      usageCount: 5
-    },
-    {
-      id: '2',
-      name: 'Marketing Manager',
-      sections: [
-        { title: 'Campagne Attive', questions: ['Quali campagne sono attualmente attive?'] },
-        { title: 'Tool e Processi', questions: ['Quali tool utilizzi quotidianamente?'] }
-      ],
-      createdAt: '2024-01-10T14:30:00Z',
-      createdBy: 'Admin',
-      usageCount: 3
-    }
-  ]);
+  const { templates, createTemplate, updateTemplate, deleteTemplate } = useTemplates();
+  const { handovers, createHandover, runAIAnalysis } = useHandovers();
 
-  const [handovers, setHandovers] = useState([
-    {
-      id: 1,
-      title: "Passaggio CTO - Marco Rossi",
-      employee: "Marco Rossi",
-      email: "marco.rossi@azienda.com",
-      status: "in-progress",
-      completion: 75,
-      dueDate: "2024-02-15T00:00:00Z",
-      createdAt: "2024-01-15T10:00:00Z",
-      templateName: "CTO Handover",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=marco"
-    },
-    {
-      id: 2,
-      title: "Handover Marketing Manager",
-      employee: "Laura Bianchi",
-      email: "laura.bianchi@azienda.com",
-      status: "completed",
-      completion: 100,
-      dueDate: "2024-01-30T00:00:00Z",
-      createdAt: "2024-01-10T14:30:00Z",
-      templateName: "Marketing Manager",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=laura"
-    },
-    {
-      id: 3,
-      title: "Sviluppatore Senior Frontend",
-      employee: "Andrea Verdi",
-      email: "andrea.verdi@azienda.com",
-      status: "pending",
-      completion: 45,
-      dueDate: "2024-02-20T00:00:00Z",
-      createdAt: "2024-01-20T09:15:00Z",
-      templateName: "Developer Senior",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=andrea"
-    },
-    {
-      id: 4,
-      title: "Responsabile Vendite Nord",
-      employee: "Giulia Neri",
-      email: "giulia.neri@azienda.com",
-      status: "in-progress",
-      completion: 60,
-      dueDate: "2024-02-10T00:00:00Z",
-      createdAt: "2024-01-18T11:20:00Z",
-      templateName: "Sales Manager",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=giulia"
-    },
-    {
-      id: 5,
-      title: "Project Manager Digital",
-      employee: "Luca Ferrari",
-      email: "luca.ferrari@azienda.com",
-      status: "completed",
-      completion: 100,
-      dueDate: "2024-01-25T00:00:00Z",
-      createdAt: "2024-01-05T16:45:00Z",
-      templateName: "Project Manager",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=luca"
-    }
-  ]);
-
-  // Mock data per la dashboard
-  const stats = {
-    users: {
-      total: 127,
-      admin: 3,
-      outgoing: 15,
-      incoming: 109
-    },
-    handovers: {
-      total: handovers.length,
-      inProgress: handovers.filter(h => h.status === 'in-progress').length,
-      completed: handovers.filter(h => h.status === 'completed').length,
-      pending: handovers.filter(h => h.status === 'pending').length
-    },
-    templates: templates.length
-  };
-
+  // Mock data per utenti (da implementare con hook dedicato)
   const users = [
     {
       id: 1,
@@ -183,39 +83,69 @@ export const AdminDashboard: React.FC = () => {
     }
   ];
 
-  const handleCreateTemplate = (template: any) => {
-    setTemplates([...templates, template]);
-    toast.success(`Template "${template.name}" creato con successo!`);
+  // Calcola statistiche dai dati reali
+  const stats = {
+    users: {
+      total: users.length,
+      admin: users.filter(u => u.role === 'admin').length,
+      outgoing: users.filter(u => u.role === 'outgoing').length,
+      incoming: users.filter(u => u.role === 'incoming').length
+    },
+    handovers: {
+      total: handovers.length,
+      inProgress: handovers.filter(h => h.status === 'in_progress').length,
+      completed: handovers.filter(h => h.status === 'completed').length,
+      pending: handovers.filter(h => h.status === 'pending').length
+    },
+    templates: templates.length
+  };
+
+  const handleCreateTemplate = async (template: any) => {
+    try {
+      await createTemplate(template);
+      toast.success(`Template "${template.name}" creato con successo!`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Errore nella creazione del template');
+    }
   };
 
   const handleEditTemplate = (template: any) => {
-    // Per ora mostra solo un messaggio, in futuro aprirà il modal di modifica
     toast.info(`Modifica template: ${template.name}`);
   };
 
-  const handleDuplicateTemplate = (template: any) => {
-    const duplicatedTemplate = {
-      ...template,
-      id: Math.random().toString(36).substr(2, 9),
-      name: `${template.name} (Copia)`,
-      createdAt: new Date().toISOString(),
-      usageCount: 0
-    };
-    setTemplates([...templates, duplicatedTemplate]);
-    toast.success(`Template "${template.name}" duplicato con successo!`);
+  const handleDuplicateTemplate = async (template: any) => {
+    try {
+      const duplicatedTemplate = {
+        ...template,
+        name: `${template.name} (Copia)`,
+        sections: template.sections
+      };
+      await createTemplate(duplicatedTemplate);
+      toast.success(`Template "${template.name}" duplicato con successo!`);
+    } catch (error) {
+      toast.error('Errore nella duplicazione del template');
+    }
   };
 
-  const handleDeleteTemplate = (templateId: string) => {
-    const template = templates.find(t => t.id === templateId);
-    setTemplates(templates.filter(t => t.id !== templateId));
-    toast.success(`Template "${template?.name}" eliminato con successo!`);
+  const handleDeleteTemplate = async (templateId: string) => {
+    try {
+      const template = templates.find(t => t.id === templateId);
+      await deleteTemplate(templateId);
+      toast.success(`Template "${template?.name}" eliminato con successo!`);
+    } catch (error) {
+      toast.error('Errore nell\'eliminazione del template');
+    }
   };
 
-  const handleHandoverCreated = (newHandover: any) => {
-    setHandovers([newHandover, ...handovers]);
-    toast.success(`Invito inviato a ${newHandover.employee}`, {
-      description: `L'handover "${newHandover.title}" è stato creato e l'invito è stato inviato via email.`
-    });
+  const handleHandoverCreated = async (newHandover: any) => {
+    try {
+      await createHandover(newHandover);
+      toast.success(`Invito inviato a ${newHandover.personName}`, {
+        description: `L'handover "${newHandover.title}" è stato creato e l'invito è stato inviato via email.`
+      });
+    } catch (error) {
+      toast.error('Errore nella creazione dell\'handover');
+    }
   };
 
   const handleViewHandoverDetails = (handover: any) => {
@@ -223,17 +153,24 @@ export const AdminDashboard: React.FC = () => {
     setIsHandoverDetailsOpen(true);
   };
 
-  const handleAIAnalysis = (handover: any) => {
-    toast.info(`Avvio analisi AI per: ${handover.title}`, {
-      description: "L'analisi AI valuterà la qualità delle risposte fornite."
-    });
-    // In futuro questo aprirà direttamente il tab di analisi AI
-    handleViewHandoverDetails(handover);
+  const handleAIAnalysis = async (handover: any) => {
+    try {
+      toast.info(`Avvio analisi AI per: ${handover.title}`, {
+        description: "L'analisi AI valuterà la qualità delle risposte fornite."
+      });
+      
+      await runAIAnalysis(handover.id);
+      
+      // Apri i dettagli con il tab AI Analysis
+      handleViewHandoverDetails(handover);
+    } catch (error) {
+      toast.error('Errore nell\'analisi AI');
+    }
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'in-progress':
+      case 'in_progress':
         return <Badge variant="outline" className="border-orange-200 text-orange-800">In corso</Badge>;
       case 'completed':
         return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Completato</Badge>;
@@ -333,7 +270,6 @@ export const AdminDashboard: React.FC = () => {
             </p>
           </div>
           
-          {/* Azioni rapide - MODIFICATO: Rinominato pulsante e rimosso Explore Template */}
           <div className="flex gap-3">
             <Button variant="outline" className="gap-2">
               <UserPlus size={16} />
