@@ -33,14 +33,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 formFieldInput: 
                   'border-gray-200 focus:border-exitloop-purple focus:ring-exitloop-purple',
                 footerActionLink: 
-                  'text-exitloop-purple hover:text-exitloop-purple/80'
+                  'text-exitloop-purple hover:text-exitloop-purple/80',
+                socialButtonsBlockButtonText: 'text-gray-700',
+                dividerLine: 'bg-gray-200',
+                dividerText: 'text-gray-500'
               },
               layout: {
-                socialButtonsPlacement: 'bottom'
+                socialButtonsPlacement: 'top',
+                showOptionalFields: false
               }
             }}
             redirectUrl="/dashboard"
             signUpUrl="#"
+            forceRedirectUrl="/dashboard"
+            fallbackRedirectUrl="/dashboard"
           />
         </div>
 
