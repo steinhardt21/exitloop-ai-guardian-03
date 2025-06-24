@@ -22,6 +22,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { CreateHandoverModal } from '@/components/handovers/CreateHandoverModal';
 import { CreateTemplateModal } from '@/components/templates/CreateTemplateModal';
+import { useHandovers } from '@/hooks/useDatabase';
+import { toast } from '@/components/ui/sonner';
 
 interface Template {
   id: string;
@@ -56,6 +58,8 @@ export const TemplateList: React.FC<TemplateListProps> = ({
   const [isCreateHandoverOpen, setIsCreateHandoverOpen] = useState(false);
   const [isCreateTemplateOpen, setIsCreateTemplateOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
+  
+  const { createHandover } = useHandovers();
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('it-IT', {
@@ -76,12 +80,43 @@ export const TemplateList: React.FC<TemplateListProps> = ({
     setIsCreateHandoverOpen(true);
   };
 
-  const handleHandoverCreated = (handover: any) => {
-    if (onHandoverCreated) {
-      onHandoverCreated(handover);
+  const handleHandoverCreated = async (handoverData: any) => {
+    try {
+      // Genera il token di invito
+      const invitationToken = `inv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Prepara i dati per il database
+      const dbHandoverData = {
+        title: handoverData.title,
+        templateId: selectedTemplate?.id,
+        email: handoverData.email,
+        personName: handoverData.personName,
+        dueDate: handoverData.dueDate,
+        inviteToken: invitationToken
+      };
+
+      // Salva nel database
+      await createHandover(dbHandoverData);
+      
+      // Chiama il callback se fornito
+      if (onHandoverCreated) {
+        onHandoverCreated({
+          ...handoverData,
+          inviteToken: invitationToken
+        });
+      }
+      
+      toast.success(`Handover creato con successo!`, {
+        description: `Invito inviato a ${handoverData.personName}`
+      });
+      
+    } catch (error) {
+      console.error('Error creating handover:', error);
+      toast.error('Errore nella creazione dell\'handover');
+    } finally {
+      setIsCreateHandoverOpen(false);
+      setSelectedTemplate(null);
     }
-    setIsCreateHandoverOpen(false);
-    setSelectedTemplate(null);
   };
 
   const handleCreateNewTemplate = () => {

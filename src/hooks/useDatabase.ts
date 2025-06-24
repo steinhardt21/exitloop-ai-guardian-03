@@ -258,6 +258,7 @@ export const useHandovers = () => {
 
   const createHandover = async (handoverData: any) => {
     try {
+      // Crea l'handover
       const { data: handover, error: handoverError } = await supabase
         .from('handovers')
         .insert({
@@ -280,7 +281,7 @@ export const useHandovers = () => {
           handover_id: handover.id,
           email: handoverData.email,
           full_name: handoverData.personName,
-          invitation_token: `inv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          invitation_token: handoverData.inviteToken,
           expires_at: handoverData.dueDate,
           created_by: user?.id
         });

@@ -97,10 +97,10 @@ export const CreateHandoverModal: React.FC<CreateHandoverModalProps> = ({
       const generatedInviteUrl = `${baseUrl}/invite?token=${invitationToken}`;
 
       const newHandover = {
-        id: Math.random().toString(36).substr(2, 9),
         title: `${template.name} - ${personName}`,
         employee: personName,
         email: personEmail,
+        personName: personName,
         templateId: template.id,
         templateName: template.name,
         status: 'pending',
