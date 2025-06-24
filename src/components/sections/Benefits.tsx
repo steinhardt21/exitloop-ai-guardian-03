@@ -1,81 +1,93 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useState } from "react";
+import { AuthModal } from "@/components/auth/AuthModal";
 
 export const Benefits = () => {
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
   return (
-    <section id="benefits" className="py-20 bg-white dark:bg-gray-900">
-      <div className="container-custom">
-        <div className="text-center mb-16">
-          <h2 className="section-title">
-            Perché <span className="gradient-text">Exitloop</span> è diverso
-          </h2>
-          <p className="section-subtitle">
-            Non una semplice checklist o knowledge base, ma un sistema intelligente che preserva tutto il valore aziendale.
-          </p>
-        </div>
+    <>
+      <section id="benefits" className="py-20 bg-white dark:bg-gray-900">
+        <div className="container-custom">
+          <div className="text-center mb-16">
+            <h2 className="section-title">
+              Perché <span className="gradient-text">Exitloop</span> è diverso
+            </h2>
+            <p className="section-subtitle">
+              Non una semplice checklist o knowledge base, ma un sistema intelligente che preserva tutto il valore aziendale.
+            </p>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-          {differentiators.map((diff, index) => (
-            <Card key={index} className="border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300 animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
-              <CardContent className="p-6">
-                <div className="h-12 w-12 rounded-lg bg-exitloop-soft-purple text-exitloop-purple flex items-center justify-center mb-4">
-                  {diff.icon}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+            {differentiators.map((diff, index) => (
+              <Card key={index} className="border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300 animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
+                <CardContent className="p-6">
+                  <div className="h-12 w-12 rounded-lg bg-exitloop-soft-purple text-exitloop-purple flex items-center justify-center mb-4">
+                    {diff.icon}
+                  </div>
+                  <h3 className="text-xl font-bold mb-3">{diff.title}</h3>
+                  <p className="text-gray-600 dark:text-gray-400">{diff.description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="bg-gradient-to-r from-exitloop-blue to-exitloop-blue/90 rounded-2xl overflow-hidden shadow-xl p-8 lg:p-12">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+              <div>
+                <h3 className="text-3xl font-bold text-white mb-6">
+                  Chi ha Exitloop non teme il turnover
+                </h3>
+                <ul className="space-y-4 mb-8">
+                  {benefits.map((benefit, index) => (
+                    <li key={index} className="flex items-center text-white">
+                      <svg className="h-6 w-6 text-exitloop-light-purple mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-lg">{benefit}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Button 
+                    size="lg" 
+                    className="bg-exitloop-purple hover:bg-exitloop-purple/90"
+                    onClick={() => setIsAuthModalOpen(true)}
+                  >
+                    Registrati
+                  </Button>
                 </div>
-                <h3 className="text-xl font-bold mb-3">{diff.title}</h3>
-                <p className="text-gray-600 dark:text-gray-400">{diff.description}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        <div className="bg-gradient-to-r from-exitloop-blue to-exitloop-blue/90 rounded-2xl overflow-hidden shadow-xl p-8 lg:p-12">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h3 className="text-3xl font-bold text-white mb-6">
-                Chi ha Exitloop non teme il turnover
-              </h3>
-              <ul className="space-y-4 mb-8">
-                {benefits.map((benefit, index) => (
-                  <li key={index} className="flex items-center text-white">
-                    <svg className="h-6 w-6 text-exitloop-light-purple mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span className="text-lg">{benefit}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="bg-exitloop-purple hover:bg-exitloop-purple/90">
-                  Registrati alla waiting list
-                </Button>
               </div>
-            </div>
-            <div className="relative animate-float">
-              <div className="absolute inset-0 bg-gradient-radial from-exitloop-light-purple/20 to-transparent blur-2xl"></div>
-              <blockquote className="relative bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-6 italic text-gray-100">
-                <svg className="absolute top-3 left-3 h-8 w-8 text-white/20" fill="currentColor" viewBox="0 0 32 32">
-                  <path d="M9.352 4C4.456 7.456 1 13.12 1 19.36c0 5.088 3.072 8.064 6.624 8.064 3.36 0 5.856-2.688 5.856-5.856 0-3.168-2.208-5.472-5.088-5.472-.576 0-1.344.096-1.536.192.48-3.264 3.552-7.104 6.624-9.024L9.352 4zm16.512 0c-4.8 3.456-8.256 9.12-8.256 15.36 0 5.088 3.072 8.064 6.624 8.064 3.264 0 5.856-2.688 5.856-5.856 0-3.168-2.304-5.472-5.184-5.472-.576 0-1.248.096-1.44.192.48-3.264 3.456-7.104 6.528-9.024L25.864 4z" />
-                </svg>
-                <p className="text-xl relative z-10">
-                  "Grazie a Exitloop, la partenza del nostro CTO dopo 8 anni è stata gestita senza intoppi. Tutto il know-how è rimasto in azienda e il nuovo responsabile è diventato operativo in tempi record."
-                </p>
-                <footer className="mt-4 flex items-center">
-                  <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center mr-3">
-                    <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-medium text-white">Laura Ferrari</p>
-                    <p className="text-sm text-gray-300">HR Director, TechFuture SPA</p>
-                  </div>
-                </footer>
-              </blockquote>
+              <div className="relative animate-float">
+                <div className="absolute inset-0 bg-gradient-radial from-exitloop-light-purple/20 to-transparent blur-2xl"></div>
+                <blockquote className="relative bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-6 italic text-gray-100">
+                  <svg className="absolute top-3 left-3 h-8 w-8 text-white/20" fill="currentColor" viewBox="0 0 32 32">
+                    <path d="M9.352 4C4.456 7.456 1 13.12 1 19.36c0 5.088 3.072 8.064 6.624 8.064 3.36 0 5.856-2.688 5.856-5.856 0-3.168-2.208-5.472-5.088-5.472-.576 0-1.344.096-1.536.192.48-3.264 3.552-7.104 6.624-9.024L9.352 4zm16.512 0c-4.8 3.456-8.256 9.12-8.256 15.36 0 5.088 3.072 8.064 6.624 8.064 3.264 0 5.856-2.688 5.856-5.856 0-3.168-2.304-5.472-5.184-5.472-.576 0-1.248.096-1.44.192.48-3.264 3.456-7.104 6.528-9.024L25.864 4z" />
+                  </svg>
+                  <p className="text-xl relative z-10">
+                    "Grazie a Exitloop, la partenza del nostro CTO dopo 8 anni è stata gestita senza intoppi. Tutto il know-how è rimasto in azienda e il nuovo responsabile è diventato operativo in tempi record."
+                  </p>
+                  <footer className="mt-4 flex items-center">
+                    <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center mr-3">
+                      <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="font-medium text-white">Laura Ferrari</p>
+                      <p className="text-sm text-gray-300">HR Director, TechFuture SPA</p>
+                    </div>
+                  </footer>
+                </blockquote>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+    </>
   );
 };
 
