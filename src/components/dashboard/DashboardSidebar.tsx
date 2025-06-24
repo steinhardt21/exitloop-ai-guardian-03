@@ -77,6 +77,14 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
+  };
+
   return (
     <div className={`${collapsed ? 'w-16' : 'w-64'} bg-white border-r border-gray-200 flex flex-col h-screen transition-all duration-300 ease-in-out`}>
       {/* Header */}
@@ -86,7 +94,7 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             <div className="w-8 h-8 bg-exitloop-purple rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">E</span>
             </div>
-            <span className="font-bold text-lg truncate">{user?.name || 'User'}</span>
+            <span className="font-bold text-lg truncate">{user?.full_name || 'User'}</span>
           </div>
         )}
         
@@ -227,8 +235,8 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         {!collapsed && (
           <div className="flex items-center gap-3 mx-2">
             <Avatar className="w-8 h-8">
-              <AvatarImage src={user?.avatar} />
-              <AvatarFallback>{user?.name?.charAt(0) || 'U'}</AvatarFallback>
+              <AvatarImage src={user?.avatar_url} />
+              <AvatarFallback>{user?.full_name?.charAt(0) || 'U'}</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium truncate">My profile</div>
@@ -241,8 +249,8 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             <TooltipTrigger asChild>
               <div className="flex justify-center mx-2">
                 <Avatar className="w-8 h-8">
-                  <AvatarImage src={user?.avatar} />
-                  <AvatarFallback>{user?.name?.charAt(0) || 'U'}</AvatarFallback>
+                  <AvatarImage src={user?.avatar_url} />
+                  <AvatarFallback>{user?.full_name?.charAt(0) || 'U'}</AvatarFallback>
                 </Avatar>
               </div>
             </TooltipTrigger>
@@ -259,7 +267,7 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={logout}
+                  onClick={handleLogout}
                   className="w-full p-2 h-10 text-gray-600 hover:text-gray-900"
                 >
                   <LogOut size={20} />
@@ -273,7 +281,7 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={logout}
+              onClick={handleLogout}
               className="w-full justify-start text-gray-600 hover:text-gray-900"
             >
               <LogOut size={16} className="mr-2" />

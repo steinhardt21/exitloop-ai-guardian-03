@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { useUser, useAuth as useClerkAuth } from '@clerk/clerk-react';
 import { supabase } from '@/lib/supabase';
 
 interface User {
@@ -14,9 +15,8 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
   isLoading: boolean;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,73 +34,143 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const { user: clerkUser, isLoaded } = useUser();
+  const { signOut } = useClerkAuth();
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Controlla se c'è un utente salvato nel localStorage all'avvio
-  useEffect(() => {
-    const savedUser = localStorage.getItem('exitloop_user');
-    if (savedUser) {
-      try {
-        const parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser);
-      } catch (error) {
-        localStorage.removeItem('exitloop_user');
-      }
-    }
-  }, []);
-
-  const login = async (email: string, password: string) => {
-    setIsLoading(true);
-    
+  // Carica il profilo utente dal database quando l'utente Clerk è disponibile
+  const loadUserProfile = async (clerkUserId: string, email: string) => {
     try {
-      // Simula un delay per il login
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Per demo, crea un utente basato sull'email
+      // Prima controlla se esiste già un profilo
+      const { data: existingProfile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', clerkUserId)
+        .single();
+
+      if (existingProfile && !fetchError) {
+        return {
+          id: existingProfile.id,
+          email: existingProfile.email,
+          full_name: existingProfile.full_name,
+          avatar_url: existingProfile.avatar_url,
+          role: existingProfile.role,
+          organization_id: existingProfile.organization_id,
+          department: existingProfile.department,
+          position: existingProfile.position
+        };
+      }
+
+      // Se non esiste, crea un nuovo profilo
+      // Determina il ruolo basato sull'email per demo
       let role: 'admin' | 'outgoing' | 'incoming' = 'admin';
       let position = 'Administrator';
+      let department = 'HR';
       
       if (email.includes('outgoing') || email.includes('uscente')) {
         role = 'outgoing';
         position = 'CTO';
+        department = 'Technology';
       } else if (email.includes('incoming') || email.includes('entrante')) {
         role = 'incoming';
         position = 'New CTO';
+        department = 'Technology';
       }
-      
-      const mockUser: User = {
-        id: Math.random().toString(36).substr(2, 9),
-        email,
-        full_name: email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
-        role,
-        organization_id: 'org-1',
-        department: role === 'admin' ? 'HR' : 'Technology',
-        position
-      };
 
-      // Salva l'utente nel localStorage
-      localStorage.setItem('exitloop_user', JSON.stringify(mockUser));
-      setUser(mockUser);
-      
+      // Crea una nuova organizzazione se non esiste
+      let organizationId = 'default-org';
+      const { data: org } = await supabase
+        .from('organizations')
+        .select('id')
+        .eq('name', 'TechCorp')
+        .single();
+
+      if (!org) {
+        const { data: newOrg, error: orgError } = await supabase
+          .from('organizations')
+          .insert({
+            name: 'TechCorp',
+            domain: 'techcorp.it'
+          })
+          .select('id')
+          .single();
+
+        if (!orgError && newOrg) {
+          organizationId = newOrg.id;
+        }
+      } else {
+        organizationId = org.id;
+      }
+
+      // Crea il nuovo profilo
+      const { data: newProfile, error: createError } = await supabase
+        .from('profiles')
+        .insert({
+          id: clerkUserId,
+          email,
+          full_name: clerkUser?.fullName || email.split('@')[0].replace('.', ' '),
+          avatar_url: clerkUser?.imageUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
+          role,
+          organization_id: organizationId,
+          department,
+          position
+        })
+        .select()
+        .single();
+
+      if (createError) {
+        console.error('Error creating profile:', createError);
+        return null;
+      }
+
+      return {
+        id: newProfile.id,
+        email: newProfile.email,
+        full_name: newProfile.full_name,
+        avatar_url: newProfile.avatar_url,
+        role: newProfile.role,
+        organization_id: newProfile.organization_id,
+        department: newProfile.department,
+        position: newProfile.position
+      };
     } catch (error) {
-      throw new Error('Credenziali non valide');
-    } finally {
-      setIsLoading(false);
+      console.error('Error in loadUserProfile:', error);
+      return null;
     }
   };
 
-  const logout = () => {
+  useEffect(() => {
+    const initializeUser = async () => {
+      if (!isLoaded) {
+        return;
+      }
+
+      if (clerkUser) {
+        const email = clerkUser.primaryEmailAddress?.emailAddress;
+        if (email) {
+          const profile = await loadUserProfile(clerkUser.id, email);
+          setUser(profile);
+        }
+      } else {
+        setUser(null);
+      }
+      
+      setIsLoading(false);
+    };
+
+    initializeUser();
+  }, [clerkUser, isLoaded]);
+
+  const logout = async () => {
+    await signOut();
     setUser(null);
-    localStorage.removeItem('exitloop_user');
   };
 
   const value = {
     user,
-    login,
-    logout,
-    isLoading
+    isLoading: isLoading || !isLoaded,
+    logout
   };
 
   return (

@@ -73,6 +73,14 @@ export const OutgoingSidebar: React.FC<OutgoingSidebarProps> = ({
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
+  };
+
   return (
     <div className={`${collapsed ? 'w-16' : 'w-64'} bg-white border-r border-gray-200 flex flex-col h-screen transition-all duration-300 ease-in-out`}>
       {/* Header */}
@@ -229,7 +237,7 @@ export const OutgoingSidebar: React.FC<OutgoingSidebarProps> = ({
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={logout}
+                  onClick={handleLogout}
                   className="w-full p-2 h-10 text-gray-600 hover:text-gray-900"
                 >
                   <LogOut size={20} />
@@ -243,7 +251,7 @@ export const OutgoingSidebar: React.FC<OutgoingSidebarProps> = ({
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={logout}
+              onClick={handleLogout}
               className="w-full justify-start text-gray-600 hover:text-gray-900"
             >
               <LogOut size={16} className="mr-2" />
