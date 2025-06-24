@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
@@ -26,7 +25,7 @@ export const Navbar = () => {
             <a href="#benefits" className="text-gray-700 dark:text-gray-300 hover:text-exitloop-purple transition-colors">
               Benefici
             </a>
-            <Button>Contattaci</Button>
+            <Button>Registrati</Button>
           </nav>
 
           {/* Mobile menu button */}
@@ -85,7 +84,7 @@ export const Navbar = () => {
               Benefici
             </a>
             <Button size="sm" className="w-full">
-              Contattaci
+              Registrati
             </Button>
           </nav>
         )}

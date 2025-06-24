@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 
 export const Footer = () => {
@@ -72,7 +71,7 @@ export const Footer = () => {
               </li>
               <li className="mt-6">
                 <Button variant="outline" className="w-full">
-                  Contattaci
+                  Registrati
                 </Button>
               </li>
             </ul>

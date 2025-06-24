@@ -46,7 +46,7 @@ export const Benefits = () => {
               </ul>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button size="lg" className="bg-exitloop-purple hover:bg-exitloop-purple/90">
-                  Iscriviti alla waiting list
+                  Registrati alla waiting list
                 </Button>
               </div>
             </div>

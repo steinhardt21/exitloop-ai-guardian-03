@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -76,7 +75,7 @@ export const Cta = () => {
               Sei pronto a non perdere più conoscenza aziendale?
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Richiedi subito una demo personalizzata e scopri come Exitloop può trasformare il turnover da problema a opportunità.
+              Registrati subito alla waiting list e scopri come Exitloop può trasformare il turnover da problema a opportunità.
             </p>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -100,7 +99,7 @@ export const Cta = () => {
                   size="lg" 
                   className="bg-exitloop-purple hover:bg-exitloop-purple/90 w-full sm:w-auto"
                 >
-                  Iscriviti alla waiting list
+                  Registrati alla waiting list
                 </Button>
               </div>
             </form>
