@@ -67,9 +67,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Se non esiste, crea un nuovo profilo
       // Controlla se c'è un invitation token nell'URL
       const invitationToken = searchParams.get('token');
-      let role: 'admin' | 'outgoing' | 'incoming' = 'admin';
+      let role: 'admin' | 'outgoing' | 'incoming' = 'admin'; // DEFAULT ADMIN
       let position = 'Administrator';
-      let department = 'HR';
+      let department = 'Management';
       
       if (invitationToken) {
         // Verifica l'invito e determina il ruolo
@@ -117,16 +117,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
         }
       } else {
-        // Determina il ruolo basato sull'email per demo (fallback)
-        if (email.includes('outgoing') || email.includes('uscente')) {
+        // Logica migliorata per determinare il ruolo basato sull'email
+        const emailLower = email.toLowerCase();
+        
+        // Parole chiave per ruolo outgoing
+        const outgoingKeywords = ['outgoing', 'uscente', 'leaving', 'departing', 'exit'];
+        // Parole chiave per ruolo incoming  
+        const incomingKeywords = ['incoming', 'entrante', 'new', 'nuovo', 'onboarding'];
+        
+        const isOutgoing = outgoingKeywords.some(keyword => emailLower.includes(keyword));
+        const isIncoming = incomingKeywords.some(keyword => emailLower.includes(keyword));
+        
+        if (isOutgoing) {
           role = 'outgoing';
           position = 'CTO';
           department = 'Technology';
-        } else if (email.includes('incoming') || email.includes('entrante')) {
+        } else if (isIncoming) {
           role = 'incoming';
           position = 'New CTO';
           department = 'Technology';
         }
+        // Altrimenti rimane admin (default)
       }
 
       // Crea una nuova organizzazione se non esiste
@@ -175,6 +186,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return null;
       }
 
+      console.log('Created new profile with role:', role, 'for email:', email);
+
       return {
         id: newProfile.id,
         email: newProfile.email,
@@ -200,7 +213,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (clerkUser) {
         const email = clerkUser.primaryEmailAddress?.emailAddress;
         if (email) {
+          console.log('Loading profile for email:', email);
           const profile = await loadUserProfile(clerkUser.id, email);
+          console.log('Loaded profile:', profile);
           setUser(profile);
         }
       } else {
