@@ -72,35 +72,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Inizializza l'autenticazione
   useEffect(() => {
-    // Check for saved user in localStorage first (for demo)
-    const savedUser = localStorage.getItem('exitloop_user');
-    if (savedUser) {
-      try {
-        const parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser);
-        setIsLoading(false);
-        return; // Skip Supabase check if we have a saved user
-      } catch (error) {
-        localStorage.removeItem('exitloop_user');
-      }
-    }
-
     // Controlla se c'è già una sessione attiva
-    const checkSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          const profile = await loadUserProfile(session.user);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        loadUserProfile(session.user).then(profile => {
           setUser(profile);
-        }
-      } catch (error) {
-        console.error('Error checking session:', error);
-      } finally {
+          setIsLoading(false);
+        });
+      } else {
         setIsLoading(false);
       }
-    };
-
-    checkSession();
+    });
 
     // Ascolta i cambiamenti di autenticazione
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -108,10 +90,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (session?.user) {
           const profile = await loadUserProfile(session.user);
           setUser(profile);
-        } else if (event === 'SIGNED_OUT') {
+        } else {
           setUser(null);
-          localStorage.removeItem('exitloop_user');
         }
+        setIsLoading(false);
       }
     );
 
@@ -119,14 +101,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const login = async (email: string, password: string) => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      
       // Per demo: controlla se è un utente mock
       const mockUser = getMockUserByEmail(email);
       if (mockUser && password === 'demo123') {
         setUser(mockUser);
         localStorage.setItem('exitloop_user', JSON.stringify(mockUser));
+        setIsLoading(false);
         return;
       }
 
@@ -149,9 +131,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const register = async (name: string, email: string, password: string) => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      
       // Registra l'utente in Supabase Auth
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -186,24 +167,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async () => {
     try {
-      setIsLoading(true);
-      // For demo users, just clear localStorage
-      if (localStorage.getItem('exitloop_user')) {
-        localStorage.removeItem('exitloop_user');
-        setUser(null);
-        return;
-      }
-      
-      // For real Supabase users
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       setUser(null);
+      localStorage.removeItem('exitloop_user');
     } catch (error) {
       console.error('Error during logout:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
+
+  // Check for existing user on mount (per demo)
+  useEffect(() => {
+    const savedUser = localStorage.getItem('exitloop_user');
+    if (savedUser && !user) {
+      try {
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser);
+      } catch (error) {
+        localStorage.removeItem('exitloop_user');
+      }
+    }
+  }, [user]);
 
   const value = {
     user,
