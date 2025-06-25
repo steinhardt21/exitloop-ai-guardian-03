@@ -9,6 +9,9 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Invite from "./pages/Invite";
 import NotFound from "./pages/NotFound";
+import AdminPreview from "./pages/AdminPreview";
+import IncomingPreview from "./pages/IncomingPreview";
+import OutgoingPreview from "./pages/OutgoingPreview";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +66,10 @@ const AppRoutes = () => {
           </SignedIn>
         } 
       />
+      {/* Preview routes for screenshots (no auth required) */}
+      <Route path="/AdminPreview" element={<AdminPreview />} />
+      <Route path="/IncomingPreview" element={<IncomingPreview />} />
+      <Route path="/OutgoingPreview" element={<OutgoingPreview />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
